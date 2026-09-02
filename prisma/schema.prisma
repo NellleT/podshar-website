@@ -1,0 +1,1143 @@
+// Podshar — PostgreSQL schema
+//
+// Design notes that explain the shape of everything below:
+//
+// 1. Three users, forever. That is a hard product constraint, so the schema
+//    optimises for rich per-member history rather than for horizontal scale.
+//    Nothing here is sharded or denormalised for throughput.
+//
+// 2. Scraped content shares one spine (`ScrapedItem`) that carries provenance,
+//    dedup and media, with 1:1 satellite tables only where a domain needs real
+//    columns to filter on (price, rooms, accords). Memes need no satellite;
+//    apartments absolutely do. Putting all four in one JSON blob would make the
+//    trap-house search unindexable, and giving each its own root table would
+//    duplicate dedup and media logic four ways.
+//
+// 3. Every external identity, token and balance is scoped to a member and to a
+//    provider, and no secret is stored in this database. Credential columns
+//    hold a *reference* into the secret store, never the credential.
+//
+// 4. Snapshot tables (`GameStatSnapshot`, `BalanceSnapshot`, `WeatherSnapshot`)
+//    are append-only time series. Current value = newest row. This is what lets
+//    the sidebar show "Dota PTS" and a graph from the same table.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------------------
+
+enum Locale {
+  en
+  ru
+  uk
+  de
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+enum ScrapeSource {
+  REDDIT
+  TIKTOK
+  PINTEREST
+  FRAGRANTICA
+  HOMEGATE
+  IMMOSCOUT
+  FLATFOX
+  WEB
+}
+
+enum ScrapedKind {
+  MEME
+  FASHION_LOOK
+  FRAGRANCE
+  REAL_ESTATE
+}
+
+enum MemeCategory {
+  POPULAR
+  NEW
+  NICHE
+}
+
+enum ScrapeStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  GIF
+  AUDIO
+}
+
+enum MusicProvider {
+  SPOTIFY
+  SOUNDCLOUD
+}
+
+enum FinanceKind {
+  FIAT
+  CRYPTO
+}
+
+enum TrackedGame {
+  DOTA2
+  BRAWL_STARS
+}
+
+enum MatchResult {
+  WIN
+  LOSS
+  DRAW
+}
+
+enum RoomGame {
+  TETRIS_3P
+  CHESS
+  DURAK
+  POKER
+}
+
+enum RoomStatus {
+  LOBBY
+  ACTIVE
+  FINISHED
+  ABANDONED
+}
+
+enum PuzzleKind {
+  WORDLE
+  DOTADLE
+  BRAWLSTARSDLE
+}
+
+enum ArcadeGame {
+  DINO
+}
+
+enum PoiKind {
+  IKEA
+  SWISSCOM
+  SCHOOL
+  OTHER
+}
+
+enum AttendeeStatus {
+  GOING
+  MAYBE
+  DECLINED
+}
+
+enum PropertyKind {
+  ROOM_3
+  STUDIO
+  HOUSE
+  BASEMENT
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// IDENTITY & ACCESS
+// ---------------------------------------------------------------------------
+
+/// The Auth.js adapter requires this model to be called `User`; the table is
+/// `members` because that is what the three of us are.
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  handle       String     @unique
+  displayName  String
+  passwordHash String
+  role         MemberRole @default(MEMBER)
+  locale       Locale     @default(en)
+  avatarId     String?    @unique
+  timeZone     String     @default("Europe/Zurich")
+  homeLocationId String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  lastSeenAt   DateTime?
+
+  avatar       MediaAsset? @relation("UserAvatar", fields: [avatarId], references: [id])
+  homeLocation Location?   @relation("UserHome", fields: [homeLocationId], references: [id])
+
+  accounts           Account[]
+  sessions           Session[]
+  musicConnections   MusicConnection[]
+  financeConnections FinanceConnection[]
+  gameAccounts       GameAccount[]
+  playEvents         PlayEvent[]
+  listeningRollups   ListeningRollup[]
+  uploadedMedia      MediaAsset[]        @relation("MediaUploader")
+  galleryPhotos      GalleryPhoto[]
+  createdEvents      CalendarEvent[]     @relation("EventCreator")
+  eventAttendance    EventAttendee[]
+  todosCreated       TodoItem[]          @relation("TodoCreator")
+  todosAssigned      TodoItem[]          @relation("TodoAssignee")
+  gymSessions        GymSession[]
+  shameAuthored      ShameEntry[]        @relation("ShameAuthor")
+  shameReceived      ShameEntry[]        @relation("ShameTarget")
+  shameReactions     ShameReaction[]
+  roomsCreated       GameRoom[]          @relation("RoomCreator")
+  roomSeats          GameParticipant[]
+  puzzleAttempts     PuzzleAttempt[]
+  arcadeScores       ArcadeScore[]
+  auditLogs          AuditLog[]
+
+  @@map("members")
+}
+
+/// The entire allowlist. Registration checks this table and nothing else, which
+/// is what keeps the app at exactly three people.
+model Invite {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  handle    String    @unique
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  claimedAt DateTime?
+
+  @@map("invites")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("auth_verification_tokens")
+}
+
+/// Image CAPTCHA drawn exclusively from our own gallery. The challenge stores
+/// which photos were offered and which were correct; the client only ever sees
+/// the photo ids and the prompt tag.
+model CaptchaChallenge {
+  id           String    @id @default(cuid())
+  promptTagId  String
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  attempts     Int       @default(0)
+  ipHash       String?
+
+  promptTag Tag                      @relation(fields: [promptTagId], references: [id])
+  options   CaptchaChallengeOption[]
+
+  @@index([expiresAt])
+  @@map("captcha_challenges")
+}
+
+model CaptchaChallengeOption {
+  id          String  @id @default(cuid())
+  challengeId String
+  photoId     String
+  position    Int
+  isCorrect   Boolean
+
+  challenge CaptchaChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  photo     GalleryPhoto     @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, position])
+  @@index([challengeId])
+  @@map("captcha_challenge_options")
+}
+
+// ---------------------------------------------------------------------------
+// MEDIA & TAGS
+// ---------------------------------------------------------------------------
+
+/// Every byte we serve. Third-party media is mirrored into our own object
+/// store on ingest, so nothing in the UI hotlinks a source CDN.
+model MediaAsset {
+  id         String    @id @default(cuid())
+  storageKey String    @unique
+  kind       MediaKind
+  mimeType   String
+  bytes      Int
+  width      Int?
+  height     Int?
+  durationMs Int?
+  blurhash   String?
+  checksum   String    @unique
+  sourceUrl  String?
+  uploaderId String?
+  createdAt  DateTime  @default(now())
+
+  uploader     User?              @relation("MediaUploader", fields: [uploaderId], references: [id], onDelete: SetNull)
+  avatarOf     User?              @relation("UserAvatar")
+  galleryPhoto GalleryPhoto?
+  scrapedLinks ScrapedItemMedia[]
+  shameEntries ShameEntry[]
+
+  @@index([kind, createdAt])
+  @@map("media_assets")
+}
+
+/// One vocabulary for meme niches, fashion aesthetics, fragrance accords and
+/// CAPTCHA prompts. A single tag table keeps the assistant's search honest.
+model Tag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  label     String
+  namespace String
+  createdAt DateTime @default(now())
+
+  scrapedItems  ScrapedItemTag[]
+  galleryPhotos GalleryPhotoTag[]
+  captchas      CaptchaChallenge[]
+
+  @@index([namespace])
+  @@map("tags")
+}
+
+// ---------------------------------------------------------------------------
+// GALLERY
+// ---------------------------------------------------------------------------
+
+model GalleryPhoto {
+  id          String   @id @default(cuid())
+  mediaId     String   @unique
+  uploaderId  String
+  caption     String?
+  takenAt     DateTime?
+  createdAt   DateTime @default(now())
+  captchaSafe Boolean  @default(false)
+
+  media    MediaAsset               @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  uploader User                     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  tags     GalleryPhotoTag[]
+  aiNotes  GalleryAiComment[]
+  captchaOptions CaptchaChallengeOption[]
+
+  @@index([createdAt])
+  @@index([captchaSafe])
+  @@map("gallery_photos")
+}
+
+model GalleryPhotoTag {
+  photoId String
+  tagId   String
+
+  photo GalleryPhoto @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  tag   Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([photoId, tagId])
+  @@map("gallery_photo_tags")
+}
+
+/// Vision-model commentary. Kept versioned by `model` and `promptVersion` so a
+/// prompt rewrite does not silently rewrite history.
+model GalleryAiComment {
+  id            String   @id @default(cuid())
+  photoId       String
+  locale        Locale
+  text          String
+  model         String
+  promptVersion String
+  createdAt     DateTime @default(now())
+
+  photo GalleryPhoto @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  @@unique([photoId, locale, promptVersion])
+  @@index([photoId])
+  @@map("gallery_ai_comments")
+}
+
+// ---------------------------------------------------------------------------
+// SCRAPING SPINE
+// ---------------------------------------------------------------------------
+
+model ScrapeRun {
+  id         String       @id @default(cuid())
+  source     ScrapeSource
+  kind       ScrapedKind
+  status     ScrapeStatus @default(RUNNING)
+  startedAt  DateTime     @default(now())
+  finishedAt DateTime?
+  itemsSeen  Int          @default(0)
+  itemsNew   Int          @default(0)
+  error      String?
+
+  items ScrapedItem[]
+
+  @@index([source, kind, startedAt])
+  @@map("scrape_runs")
+}
+
+model ScrapedItem {
+  id          String       @id @default(cuid())
+  kind        ScrapedKind
+  source      ScrapeSource
+  externalId  String
+  url         String
+  title       String?
+  body        String?
+  author      String?
+  publishedAt DateTime?
+  fetchedAt   DateTime     @default(now())
+  /// Source-native popularity, normalised to 0..1 at ingest so feeds from
+  /// Reddit and TikTok can be ranked in one ORDER BY.
+  score       Float        @default(0)
+  hidden      Boolean      @default(false)
+  runId       String?
+  payload     Json?
+
+  run       ScrapeRun?         @relation(fields: [runId], references: [id], onDelete: SetNull)
+  media     ScrapedItemMedia[]
+  tags      ScrapedItemTag[]
+  meme      MemeItem?
+  fashion   FashionLook?
+  fragrance FragranceItem?
+  listing   RealEstateListing?
+
+  @@unique([source, externalId])
+  @@index([kind, score])
+  @@index([kind, publishedAt])
+  @@map("scraped_items")
+}
+
+model ScrapedItemMedia {
+  itemId   String
+  mediaId  String
+  position Int
+
+  item  ScrapedItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  media MediaAsset  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, mediaId])
+  @@unique([itemId, position])
+  @@map("scraped_item_media")
+}
+
+model ScrapedItemTag {
+  itemId String
+  tagId  String
+
+  item ScrapedItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag  Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+  @@map("scraped_item_tags")
+}
+
+// --- satellites ------------------------------------------------------------
+
+model MemeItem {
+  itemId   String       @id
+  category MemeCategory
+  language String?
+  subreddit String?
+  soundId  String?
+
+  item ScrapedItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([category])
+  @@map("meme_items")
+}
+
+model FashionLook {
+  itemId    String  @id
+  aesthetic String
+  season    String?
+  boardUrl  String?
+
+  item ScrapedItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([aesthetic])
+  @@map("fashion_looks")
+}
+
+model FragranceItem {
+  itemId          String   @id
+  house           String
+  name            String
+  persona         String?
+  accords         String[]
+  longevityScore  Float?
+  complimentScore Float?
+  nicheScore      Float?
+  priceEur        Decimal? @db.Decimal(10, 2)
+
+  item ScrapedItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([house, name])
+  @@index([complimentScore])
+  @@map("fragrance_items")
+}
+
+model RealEstateListing {
+  itemId     String       @id
+  kind       PropertyKind
+  rooms      Decimal?     @db.Decimal(3, 1)
+  areaSqm    Int?
+  priceChf   Decimal?     @db.Decimal(10, 2)
+  street     String?
+  postalCode String?
+  city       String?
+  latitude   Float?
+  longitude  Float?
+  availableFrom DateTime?
+  isActive   Boolean      @default(true)
+
+  item ScrapedItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([kind, priceChf])
+  @@index([city, street])
+  @@index([isActive, availableFrom])
+  @@map("real_estate_listings")
+}
+
+// ---------------------------------------------------------------------------
+// MUSIC
+// ---------------------------------------------------------------------------
+
+model MusicConnection {
+  id             String        @id @default(cuid())
+  userId         String
+  provider       MusicProvider
+  externalUserId String
+  /// Pointer into the secret store. Never the token itself.
+  credentialRef  String
+  scope          String?
+  expiresAt      DateTime?
+  lastSyncedAt   DateTime?
+  createdAt      DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@unique([provider, externalUserId])
+  @@map("music_connections")
+}
+
+model Artist {
+  id           String   @id @default(cuid())
+  canonicalKey String   @unique
+  name         String
+  createdAt    DateTime @default(now())
+
+  tracks   Track[]
+  genres   ArtistGenre[]
+  rollups  ListeningRollup[]
+
+  @@map("artists")
+}
+
+model Genre {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  artists ArtistGenre[]
+  rollups ListeningRollup[]
+
+  @@map("genres")
+}
+
+model ArtistGenre {
+  artistId String
+  genreId  String
+
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  genre  Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([artistId, genreId])
+  @@map("artist_genres")
+}
+
+/// Provider-agnostic track. `canonicalKey` is a normalised artist+title hash,
+/// which is what lets a Spotify listen and a SoundCloud listen collapse into
+/// one row for the group's "most listened track".
+model Track {
+  id           String   @id @default(cuid())
+  canonicalKey String   @unique
+  title        String
+  artistId     String
+  isrc         String?
+  durationMs   Int?
+  createdAt    DateTime @default(now())
+
+  artist   Artist            @relation(fields: [artistId], references: [id])
+  refs     TrackProviderRef[]
+  plays    PlayEvent[]
+  rollups  ListeningRollup[]
+
+  @@index([artistId])
+  @@map("tracks")
+}
+
+model TrackProviderRef {
+  id         String        @id @default(cuid())
+  trackId    String
+  provider   MusicProvider
+  externalId String
+  url        String?
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalId])
+  @@index([trackId])
+  @@map("track_provider_refs")
+}
+
+model PlayEvent {
+  id         String        @id @default(cuid())
+  userId     String
+  trackId    String
+  provider   MusicProvider
+  playedAt   DateTime
+  msPlayed   Int?
+  /// Provider's play identifier. The unique constraint below makes repeated
+  /// polling of "recently played" idempotent.
+  externalId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, externalId])
+  @@index([userId, playedAt])
+  @@index([trackId, playedAt])
+  @@map("play_events")
+}
+
+enum RollupDimension {
+  TRACK
+  ARTIST
+  GENRE
+}
+
+/// Pre-aggregated listening totals. The comparative dashboard reads only from
+/// here, so it stays fast no matter how many raw plays accumulate.
+///
+/// The uniqueness key is (`dimension`, `dimensionId`) rather than the three
+/// nullable foreign keys: Postgres treats NULLs as distinct, so a constraint
+/// spanning nullable columns would happily admit duplicate rows. The typed FKs
+/// below exist for joins only.
+model ListeningRollup {
+  id          String          @id @default(cuid())
+  userId      String
+  period      String
+  periodStart DateTime
+  dimension   RollupDimension
+  dimensionId String
+  trackId     String?
+  artistId    String?
+  genreId     String?
+  playCount   Int             @default(0)
+  msPlayed    BigInt          @default(0)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track  Track?  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist Artist? @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  genre  Genre?  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period, periodStart, dimension, dimensionId])
+  @@index([period, periodStart, dimension])
+  @@map("listening_rollups")
+}
+
+model CompatibilityScore {
+  id          String   @id @default(cuid())
+  period      String
+  periodStart DateTime
+  score       Float
+  breakdown   Json
+  computedAt  DateTime @default(now())
+
+  @@unique([period, periodStart])
+  @@map("compatibility_scores")
+}
+
+// ---------------------------------------------------------------------------
+// FINANCE ("Ballick")
+// ---------------------------------------------------------------------------
+
+model FinanceConnection {
+  id            String      @id @default(cuid())
+  userId        String
+  kind          FinanceKind
+  provider      String
+  label         String
+  /// Public address or account reference. Safe to store.
+  externalRef   String?
+  /// Pointer into the secret store for read-only API keys. Never the key.
+  credentialRef String?
+  isActive      Boolean     @default(true)
+  lastSyncedAt  DateTime?
+  createdAt     DateTime    @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots BalanceSnapshot[]
+
+  @@unique([userId, provider, label])
+  @@map("finance_connections")
+}
+
+model BalanceSnapshot {
+  id           String   @id @default(cuid())
+  connectionId String
+  asset        String
+  amount       Decimal  @db.Decimal(38, 18)
+  fiatValue    Decimal? @db.Decimal(18, 2)
+  fiatCurrency String   @default("CHF")
+  capturedAt   DateTime @default(now())
+
+  connection FinanceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, capturedAt])
+  @@map("balance_snapshots")
+}
+
+// ---------------------------------------------------------------------------
+// GAME STATS
+// ---------------------------------------------------------------------------
+
+model GameAccount {
+  id         String      @id @default(cuid())
+  userId     String
+  game       TrackedGame
+  externalId String
+  tag        String?
+  isPrimary  Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots GameStatSnapshot[]
+  matches   MatchRecord[]
+
+  @@unique([game, externalId])
+  @@index([userId])
+  @@map("game_accounts")
+}
+
+/// Append-only time series. The sidebar's "Dota 2 PTS" and "Brawl Stars cups"
+/// are both just the newest row for that account.
+model GameStatSnapshot {
+  id         String      @id @default(cuid())
+  accountId  String
+  game       TrackedGame
+  capturedAt DateTime    @default(now())
+  mmr        Int?
+  rankTier   String?
+  cups       Int?
+  highestCups Int?
+  winRate    Float?
+  payload    Json?
+
+  account GameAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, capturedAt])
+  @@map("game_stat_snapshots")
+}
+
+model MatchRecord {
+  id              String      @id @default(cuid())
+  accountId       String
+  game            TrackedGame
+  externalMatchId String
+  playedAt        DateTime
+  result          MatchResult
+  /// Hero name for Dota, brawler name for Brawl Stars.
+  character       String?
+  durationSec     Int?
+  ratingDelta     Int?
+  payload         Json?
+
+  account GameAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, externalMatchId])
+  @@index([accountId, playedAt])
+  @@map("match_records")
+}
+
+model PatchNote {
+  id         String      @id @default(cuid())
+  game       TrackedGame
+  version    String
+  releasedAt DateTime
+  url        String
+  summary    String?
+
+  @@unique([game, version])
+  @@index([game, releasedAt])
+  @@map("patch_notes")
+}
+
+/// Meta snapshot scoped to a rank bracket, so the analyser can answer "good in
+/// *our* bracket" rather than "good in pro games".
+model MetaHeroStat {
+  id         String      @id @default(cuid())
+  game       TrackedGame
+  heroKey    String
+  bracket    String
+  patch      String
+  winRate    Float
+  pickRate   Float
+  banRate    Float?
+  capturedAt DateTime    @default(now())
+
+  @@unique([game, heroKey, bracket, patch])
+  @@index([game, bracket, winRate])
+  @@map("meta_hero_stats")
+}
+
+// ---------------------------------------------------------------------------
+// GAMING HUB (realtime, daily puzzles, arcade)
+// ---------------------------------------------------------------------------
+
+model GameRoom {
+  id          String     @id @default(cuid())
+  game        RoomGame
+  status      RoomStatus @default(LOBBY)
+  createdById String
+  seed        String
+  /// Authoritative game state, written by the realtime server only.
+  state       Json?
+  createdAt   DateTime   @default(now())
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  createdBy    User              @relation("RoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  participants GameParticipant[]
+
+  @@index([game, status])
+  @@map("game_rooms")
+}
+
+model GameParticipant {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  seat      Int
+  score     Int      @default(0)
+  placement Int?
+  joinedAt  DateTime @default(now())
+
+  room GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@unique([roomId, seat])
+  @@map("game_participants")
+}
+
+model DailyPuzzle {
+  id         String     @id @default(cuid())
+  kind       PuzzleKind
+  puzzleDate DateTime   @db.Date
+  /// Hashed so a curious member cannot read today's answer out of the DB.
+  answerHash String
+  answer     String
+  payload    Json?
+
+  attempts PuzzleAttempt[]
+
+  @@unique([kind, puzzleDate])
+  @@map("daily_puzzles")
+}
+
+model PuzzleAttempt {
+  id          String    @id @default(cuid())
+  puzzleId    String
+  userId      String
+  guesses     Json
+  solved      Boolean   @default(false)
+  guessCount  Int       @default(0)
+  completedAt DateTime?
+  startedAt   DateTime  @default(now())
+
+  puzzle DailyPuzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([puzzleId, userId])
+  @@map("puzzle_attempts")
+}
+
+/// Offline-first leaderboard. `clientNonce` is generated on the device when the
+/// run ends, so a queued score syncing twice after a reconnect inserts once.
+model ArcadeScore {
+  id          String     @id @default(cuid())
+  game        ArcadeGame
+  userId      String
+  score       Int
+  achievedAt  DateTime
+  clientNonce String
+  syncedAt    DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientNonce])
+  @@index([game, score])
+  @@map("arcade_scores")
+}
+
+// ---------------------------------------------------------------------------
+// LIFE ORGANIZER
+// ---------------------------------------------------------------------------
+
+model Location {
+  id        String  @id @default(cuid())
+  label     String
+  latitude  Float
+  longitude Float
+  /// SBB/Transport API stop identifier, for the transit lookups.
+  stopId    String?
+
+  residents        User[]            @relation("UserHome")
+  weatherSnapshots WeatherSnapshot[]
+  transitQueries   TransitQuery[]
+
+  @@map("locations")
+}
+
+model PointOfInterest {
+  id        String  @id @default(cuid())
+  label     String
+  kind      PoiKind
+  latitude  Float
+  longitude Float
+  stopId    String?
+
+  transitQueries TransitQuery[]
+
+  @@index([kind])
+  @@map("points_of_interest")
+}
+
+/// Cached SBB itineraries. The API is rate limited and three people checking
+/// "how long to IKEA" should not each cost a call.
+model TransitQuery {
+  id         String   @id @default(cuid())
+  fromId     String
+  toId       String
+  departAt   DateTime
+  fetchedAt  DateTime @default(now())
+  expiresAt  DateTime
+  itineraries Json
+
+  from Location        @relation(fields: [fromId], references: [id], onDelete: Cascade)
+  to   PointOfInterest @relation(fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([fromId, toId, departAt])
+  @@index([expiresAt])
+  @@map("transit_queries")
+}
+
+model WeatherSnapshot {
+  id         String   @id @default(cuid())
+  locationId String
+  capturedAt DateTime @default(now())
+  tempC      Float
+  feelsLikeC Float?
+  code       String
+  windKph    Float?
+  payload    Json?
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([locationId, capturedAt])
+  @@map("weather_snapshots")
+}
+
+/// Generic countdown store. "Doomsday" is just the row with key `doomsday`.
+model Countdown {
+  id       String   @id @default(cuid())
+  key      String   @unique
+  label    String
+  targetAt DateTime
+
+  @@map("countdowns")
+}
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  allDay      Boolean   @default(false)
+  location    String?
+  /// iCalendar RRULE for repeats, expanded at read time.
+  rrule       String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy User            @relation("EventCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  attendees EventAttendee[]
+
+  @@index([startsAt])
+  @@map("calendar_events")
+}
+
+model EventAttendee {
+  eventId String
+  userId  String
+  status  AttendeeStatus @default(GOING)
+
+  event CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("event_attendees")
+}
+
+model TodoItem {
+  id          String    @id @default(cuid())
+  title       String
+  notes       String?
+  done        Boolean   @default(false)
+  doneAt      DateTime?
+  dueAt       DateTime?
+  /// Fractional index, so drag-and-drop reordering touches one row.
+  position    Float
+  createdById String
+  assigneeId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy User  @relation("TodoCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  assignee  User? @relation("TodoAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([done, position])
+  @@index([assigneeId])
+  @@map("todo_items")
+}
+
+model GymSession {
+  id           String    @id @default(cuid())
+  userId       String
+  scheduledFor DateTime
+  completedAt  DateTime?
+  focus        String?
+  notes        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scheduledFor])
+  @@map("gym_sessions")
+}
+
+model ShameEntry {
+  id        String   @id @default(cuid())
+  authorId  String
+  targetId  String
+  text      String
+  mediaId   String?
+  createdAt DateTime @default(now())
+
+  author    User            @relation("ShameAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  target    User            @relation("ShameTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  media     MediaAsset?     @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  reactions ShameReaction[]
+
+  @@index([targetId, createdAt])
+  @@index([createdAt])
+  @@map("shame_entries")
+}
+
+model ShameReaction {
+  entryId String
+  userId  String
+  emoji   String
+
+  entry ShameEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, userId, emoji])
+  @@map("shame_reactions")
+}
+
+model Quote {
+  id        String   @id @default(cuid())
+  text      String
+  attribution String?
+  locale    Locale
+  createdAt DateTime @default(now())
+
+  features QuoteOfTheDay[]
+
+  @@index([locale])
+  @@map("quotes")
+}
+
+model QuoteOfTheDay {
+  id        String   @id @default(cuid())
+  showOn    DateTime @db.Date
+  quoteId   String
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@unique([showOn])
+  @@map("quote_of_the_day")
+}
+
+// ---------------------------------------------------------------------------
+// OPERATIONS
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  ipHash    String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}

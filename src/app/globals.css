@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --canvas: #f7efe5;
+    --ink: #7b5246;
+    --sand: #d8c3b1;
+    --clay: #a88b7d;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--clay);
+    color: var(--canvas);
+  }
+
+  /* Keyboard focus only. A lookbook should not show rings to mouse users. */
+  :focus-visible {
+    outline: 1px solid var(--clay);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Uppercase micro-label used for every section header and stat caption. */
+  .ps-label {
+    @apply text-label font-sans uppercase text-ink-muted;
+  }
+
+  /* Hairline rule. The whole layout is built from these, not from boxes. */
+  .ps-rule {
+    @apply border-t border-hairline;
+  }
+}

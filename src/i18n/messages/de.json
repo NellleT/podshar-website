@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "Podshar",
+    "description": "Ein privater Hub für drei."
+  },
+  "greeting": {
+    "night": "Gute Nacht",
+    "morning": "Guten Morgen",
+    "afternoon": "Guten Tag",
+    "evening": "Guten Abend"
+  },
+  "home": {
+    "issue": "Ausgabe",
+    "enter": "ПХ",
+    "enterCaption": "Zum Hub",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schliessen",
+    "language": "Sprache"
+  },
+  "sidebar": {
+    "profile": "Profil",
+    "stats": "Live-Statistiken",
+    "dotaPts": "Dota 2 PTS",
+    "brawlCups": "Brawl-Stars-Pokale",
+    "navigation": "Navigation",
+    "signOut": "Abmelden",
+    "editProfile": "Bearbeiten",
+    "more": "Alle Bereiche"
+  },
+  "nav": {
+    "daily": "Täglich",
+    "culture": "Kultur",
+    "world": "Welt",
+    "play": "Spielen",
+    "hub": "Such-Hub",
+    "calendar": "Kalender",
+    "todos": "Aufgaben",
+    "gym": "Gym",
+    "wallOfShame": "Wall of Shame",
+    "memes": "Meme-Feed",
+    "gallery": "Galerie",
+    "radar": "Mode & Duft",
+    "music": "Musik",
+    "ballick": "Ballick",
+    "traphouse": "Trap House",
+    "geopolitics": "Karte",
+    "games": "Spiele",
+    "gameStats": "Spielstatistiken"
+  },
+  "assistant": {
+    "name": "Podshar",
+    "role": "Navigator",
+    "open": "Assistent öffnen",
+    "close": "Assistent schliessen",
+    "placeholder": "Frag mich, oder sag, wohin du willst",
+    "send": "Senden",
+    "intro": "Ich kenne hier jede Ecke. Sag mir, wohin du willst.",
+    "offline": "Noch keine Verbindung. Nenn einen Bereich."
+  }
+}

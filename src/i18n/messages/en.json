@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "Podshar",
+    "description": "A private hub for three."
+  },
+  "greeting": {
+    "night": "Good night",
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  },
+  "home": {
+    "issue": "Issue",
+    "enter": "ПХ",
+    "enterCaption": "Enter the hub",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "language": "Language"
+  },
+  "sidebar": {
+    "profile": "Profile",
+    "stats": "Live stats",
+    "dotaPts": "Dota 2 PTS",
+    "brawlCups": "Brawl Stars cups",
+    "navigation": "Navigation",
+    "signOut": "Sign out",
+    "editProfile": "Edit",
+    "more": "All sections"
+  },
+  "nav": {
+    "daily": "Daily",
+    "culture": "Culture",
+    "world": "World",
+    "play": "Play",
+    "hub": "Search hub",
+    "calendar": "Calendar",
+    "todos": "To-do",
+    "gym": "Gym",
+    "wallOfShame": "Wall of shame",
+    "memes": "Meme feed",
+    "gallery": "Gallery",
+    "radar": "Fashion & fragrance",
+    "music": "Music",
+    "ballick": "Ballick",
+    "traphouse": "Trap house",
+    "geopolitics": "Map",
+    "games": "Games",
+    "gameStats": "Game stats"
+  },
+  "assistant": {
+    "name": "Podshar",
+    "role": "Navigator",
+    "open": "Open assistant",
+    "close": "Close assistant",
+    "placeholder": "Ask me, or say where you want to go",
+    "send": "Send",
+    "intro": "I know every corner of this place. Tell me where you want to go.",
+    "offline": "Not connected yet. Try naming a section."
+  }
+}
