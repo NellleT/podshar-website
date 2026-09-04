@@ -96,8 +96,6 @@ components/RightAIChat.tsx (desktop persistent, mobile slide-in).
 
 
 http://localhost:3000/en/hub
-
-
 Промпт 3 (версия 0.3 — Block-based Minimalism + интерактивная кнопка «Солнце»):
 
 Act as an Expert Full-Stack Software Architect and Creative Developer with 10+ years of experience. We are pivoting the UI/UX design for the "Podshar" application. The previous iteration felt too much like an e-commerce platform. We are stripping it down to a clean, block-based minimalism while preserving the core layout structure.
