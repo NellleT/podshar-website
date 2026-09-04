@@ -15,7 +15,9 @@
     "enterCaption": "Enter the hub",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "language": "Language"
+    "language": "Language",
+    "greetingLabel": "Welcome",
+    "memberLabel": "Member"
   },
   "sidebar": {
     "profile": "Profile",

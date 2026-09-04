@@ -35,7 +35,7 @@ export function RightAIChat() {
       {/* Desktop: persistent column */}
       <aside
         aria-label={t('name')}
-        className="hidden w-chat shrink-0 border-l border-hairline bg-canvas lg:flex lg:flex-col"
+        className="hidden w-chat shrink-0 border-l border-rule bg-canvas lg:flex lg:flex-col"
       >
         <ChatBody />
       </aside>
@@ -44,7 +44,7 @@ export function RightAIChat() {
       <aside
         aria-label={t('name')}
         inert={!open}
-        className={`fixed inset-y-0 right-0 z-50 flex w-[min(21rem,88vw)] flex-col border-l border-hairline bg-canvas shadow-panel transition-transform duration-drape ease-drape lg:hidden ${
+        className={`fixed inset-y-0 right-0 z-50 flex w-[min(21rem,88vw)] flex-col border-l border-ink bg-canvas transition-transform duration-drape ease-drape lg:hidden ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -57,7 +57,7 @@ export function RightAIChat() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? t('close') : t('open')}
         aria-expanded={open}
-        className={`fixed bottom-5 right-5 z-50 grid h-14 w-14 place-items-center rounded-full border border-clay/40 bg-sand text-ink shadow-panel transition-all duration-drape ease-drape hover:bg-clay hover:text-canvas lg:hidden ${
+        className={`fixed bottom-4 right-4 z-50 grid h-14 w-14 place-items-center border border-ink bg-sand text-ink shadow-block transition-all duration-drape ease-drape hover:bg-clay hover:text-canvas lg:hidden ${
           open ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100'
         }`}
       >
@@ -128,11 +128,11 @@ function ChatBody({ onClose }: { onClose?: () => void }) {
   return (
     <>
       <header className="flex items-center gap-3 px-5 py-6">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-clay/35 bg-sand text-ink">
+        <div className="grid h-11 w-11 shrink-0 place-items-center border border-ink bg-sand text-ink">
           <PodsharMark className="h-6 w-6" animated />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-display text-sm tracking-[0.14em] text-ink">{t('name')}</p>
+          <p className="text-sm font-medium tracking-[0.12em] text-ink">{t('name')}</p>
           <p className="ps-label">{t('role')}</p>
         </div>
         {onClose ? (
@@ -140,7 +140,7 @@ function ChatBody({ onClose }: { onClose?: () => void }) {
             type="button"
             onClick={onClose}
             aria-label={t('close')}
-            className="text-xl leading-none text-ink-muted transition-colors hover:text-ink"
+            className="grid h-8 w-8 place-items-center border border-rule text-sm leading-none text-ink-muted transition-colors hover:bg-sand hover:text-ink"
           >
             &#215;
           </button>
@@ -150,15 +150,15 @@ function ChatBody({ onClose }: { onClose?: () => void }) {
       <div
         ref={logRef}
         aria-live="polite"
-        className="flex-1 space-y-3 overflow-y-auto border-t border-hairline px-5 py-5"
+        className="flex-1 space-y-2 overflow-y-auto border-t border-rule px-5 py-5"
       >
         {messages.map((m) => (
           <p
             key={m.id}
-            className={`max-w-[88%] rounded-sm px-3 py-2 text-sm leading-relaxed ${
+            className={`max-w-[88%] border px-3 py-2 text-sm leading-relaxed ${
               m.role === 'assistant'
-                ? 'bg-sand/55 text-ink'
-                : 'ml-auto bg-clay text-canvas'
+                ? 'border-rule bg-sand text-ink'
+                : 'ml-auto border-ink bg-clay text-canvas'
             }`}
           >
             {m.text}
@@ -169,18 +169,18 @@ function ChatBody({ onClose }: { onClose?: () => void }) {
 
       <form
         onSubmit={send}
-        className="flex items-center gap-2 border-t border-hairline px-3 py-3"
+        className="flex items-center gap-2 border-t border-rule p-3"
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t('placeholder')}
-          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-ink outline-none placeholder:text-ink-faint"
+          className="min-w-0 flex-1 border border-rule bg-canvas px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-ink placeholder:text-ink-faint"
         />
         <button
           type="submit"
           disabled={busy || !input.trim()}
-          className="ps-label rounded-sm bg-sand px-3 py-2 text-ink transition-colors duration-300 hover:bg-clay hover:text-canvas disabled:opacity-40 disabled:hover:bg-sand disabled:hover:text-ink"
+          className="ps-label border border-ink bg-sand px-3 py-2.5 text-ink transition-colors duration-drape hover:bg-clay hover:text-canvas disabled:opacity-40 disabled:hover:bg-sand disabled:hover:text-ink"
         >
           {t('send')}
         </button>

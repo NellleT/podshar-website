@@ -16,9 +16,9 @@ function slotFor(date: Date): Slot {
 /**
  * Time-of-day greeting.
  *
- * The slot depends on the *viewer's* clock, which the server cannot know, so
- * it resolves after mount. To keep the layout from jumping we render the
- * longest-lived string invisibly during SSR: same markup on both sides, no
+ * The slot depends on the *viewer's* clock, which the server cannot know, so it
+ * resolves after mount. To keep the block from resizing we render the
+ * longest-lived string invisibly during SSR: identical markup on both sides, no
  * hydration mismatch, no reflow when the real value lands.
  */
 export function Greeting({ name }: { name?: string }) {
@@ -33,16 +33,14 @@ export function Greeting({ name }: { name?: string }) {
     return () => clearInterval(id);
   }, []);
 
-  const text = t(slot ?? 'afternoon');
-
   return (
     <h1
-      className={`text-greeting font-display font-normal text-ink transition-opacity duration-700 ${
+      className={`text-greeting font-light text-ink transition-opacity duration-500 ${
         slot ? 'opacity-100' : 'opacity-0'
       }`}
       aria-live="polite"
     >
-      {text}
+      {t(slot ?? 'afternoon')}
       {name ? <span className="text-clay">, {name}</span> : null}
       <span className="text-clay">…</span>
     </h1>

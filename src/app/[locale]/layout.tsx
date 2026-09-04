@@ -1,30 +1,26 @@
 import type { Metadata, Viewport } from 'next';
-import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
-import { Playfair_Display, Inter } from 'next/font/google';
+import { getMessages, getTranslations } from 'next-intl/server';
+import { Roboto } from 'next/font/google';
 
-import { routing, type Locale } from '@/i18n/routing';
+import { routing } from '@/i18n/routing';
 import { AppShell } from '@/components/AppShell';
 import { getCurrentMember, getQuickStats } from '@/lib/session';
+import { resolveLocale } from '@/lib/locale';
 import '../globals.css';
 
 /**
- * Playfair carries the greeting and every display line; Inter carries the UI.
+ * One family, Roboto, at every size in the app. Hierarchy comes from weight and
+ * letter-spacing, never from a second face.
  *
- * Both faces ship Cyrillic, which is not optional here: the greeting renders in
- * Russian and Ukrainian, and a fallback face mid-word would wreck the one piece
- * of typography the homepage is built around.
+ * The Cyrillic subset is not optional here: the greeting renders in Russian and
+ * Ukrainian, and a fallback face mid-word would wreck the largest type on the
+ * page. Four weights cover labels (500), body (400), and the thin greeting (300).
  */
-const display = Playfair_Display({
+const roboto = Roboto({
   subsets: ['latin', 'latin-ext', 'cyrillic'],
-  variable: '--font-display',
-  display: 'swap'
-});
-
-const sans = Inter({
-  subsets: ['latin', 'latin-ext', 'cyrillic'],
-  variable: '--font-sans',
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-roboto',
   display: 'swap'
 });
 
@@ -37,7 +33,9 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  // Guarded too: metadata runs for unmatched paths as well, and loading a
+  // catalogue for a locale that does not exist fails the whole request.
+  const locale = resolveLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: 'meta' });
 
   return {
@@ -65,11 +63,8 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
-  if (!routing.locales.includes(locale as Locale)) notFound();
-
-  // Opts this subtree into static rendering instead of forcing it dynamic.
-  setRequestLocale(locale);
+  // Validates the segment and opts this subtree into static rendering.
+  const locale = resolveLocale((await params).locale);
 
   const [messages, profile, stats] = await Promise.all([
     getMessages(),
@@ -78,7 +73,7 @@ export default async function LocaleLayout({
   ]);
 
   return (
-    <html lang={locale} className={`${display.variable} ${sans.variable}`}>
+    <html lang={locale} className={roboto.variable}>
       <body className="bg-canvas font-sans text-ink antialiased">
         <NextIntlClientProvider messages={messages}>
           {/* AppShell owns the three-column grid and the drawer push. */}

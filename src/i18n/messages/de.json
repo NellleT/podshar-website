@@ -15,7 +15,9 @@
     "enterCaption": "Zum Hub",
     "openMenu": "Menü öffnen",
     "closeMenu": "Menü schliessen",
-    "language": "Sprache"
+    "language": "Sprache",
+    "greetingLabel": "Willkommen",
+    "memberLabel": "Mitglied"
   },
   "sidebar": {
     "profile": "Profil",

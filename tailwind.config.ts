@@ -1,17 +1,20 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Podshar design tokens.
+ * Podshar design tokens — block-based minimalism.
  *
- * The palette is deliberately tiny. A lookbook reads as expensive because it
- * repeats three or four values with discipline, not because it has a big ramp.
- *   canvas  #f7efe5  warm cream ground
- *   ink     #7b5246  earthy brown, all text + hairlines
- *   sand    #D8C3B1  light accent: fills, resting state
- *   clay    #A88B7D  mid accent: active states, borders, inverted text ground
+ * The palette is unchanged; how it is applied is not. Everything is flat now:
+ * solid fills, solid outlines, sharp corners, no gradients and no blur. Depth,
+ * where a surface genuinely needs it, comes from `shadow-block` — a hard offset
+ * with zero blur, which reads as a stacked sheet of paper rather than a glow.
  *
- * Shadows and panel widths are tokens too, so no component ever writes a raw
- * colour or a magic layout number.
+ *   canvas  #f7efe5  cream ground
+ *   ink     #7b5246  text and block outlines
+ *   sand    #D8C3B1  block fills, resting accent
+ *   clay    #A88B7D  active states, inverted text ground
+ *
+ * One typeface, Roboto, at every size and weight. Hierarchy is carried by
+ * weight, size and letter-spacing — never by a second family.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -24,22 +27,27 @@ const config: Config = {
         clay: '#A88B7D',
         // Derived, never hand-typed at call sites.
         'ink-muted': 'rgba(123, 82, 70, 0.62)',
-        'ink-faint': 'rgba(123, 82, 70, 0.28)',
+        'ink-faint': 'rgba(123, 82, 70, 0.32)',
         hairline: 'rgba(123, 82, 70, 0.18)',
+        // The outline every bento block is drawn with.
+        rule: 'rgba(123, 82, 70, 0.34)',
         'canvas-sunk': '#f1e5d7'
       },
       fontFamily: {
-        display: ['var(--font-display)', 'Georgia', 'serif'],
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif']
+        // Roboto everywhere. `display` is kept as an alias so no call site has
+        // to change to prove there is only one family in the system.
+        sans: ['var(--font-roboto)', 'Roboto', 'system-ui', 'sans-serif'],
+        display: ['var(--font-roboto)', 'Roboto', 'system-ui', 'sans-serif']
       },
       letterSpacing: {
-        label: '0.22em',
-        wordmark: '0.34em'
+        label: '0.16em',
+        wordmark: '0.3em'
       },
       fontSize: {
-        // Editorial scale. The greeting is the only thing allowed above 5xl.
-        greeting: ['clamp(2rem, 6vw, 5rem)', { lineHeight: '1.04', letterSpacing: '-0.02em' }],
-        label: ['0.625rem', { lineHeight: '1', letterSpacing: '0.22em' }]
+        // The greeting is the only thing allowed to run this large.
+        greeting: ['clamp(1.75rem, 5vw, 4rem)', { lineHeight: '1.06', letterSpacing: '-0.03em' }],
+        label: ['0.625rem', { lineHeight: '1', letterSpacing: '0.16em' }],
+        stat: ['clamp(1.5rem, 2.6vw, 2.25rem)', { lineHeight: '1', letterSpacing: '-0.02em' }]
       },
       width: {
         // Panel widths live here so the shell and the panels cannot drift apart.
@@ -47,19 +55,23 @@ const config: Config = {
         'sidebar-lg': '20rem',
         chat: '21rem'
       },
+      borderRadius: {
+        // Sharp by default. `sm` is the largest curve anything is allowed.
+        DEFAULT: '0px',
+        sm: '2px'
+      },
       boxShadow: {
-        // The seal's depth: a pressed inner well plus a soft outer lift.
-        seal: 'inset 0 2px 10px rgba(123, 82, 70, 0.22), inset 0 -1px 0 rgba(247, 239, 229, 0.6)',
-        'seal-hover':
-          'inset 0 2px 14px rgba(123, 82, 70, 0.34), 0 14px 40px -18px rgba(123, 82, 70, 0.55)',
-        panel: '0 24px 60px -30px rgba(123, 82, 70, 0.5)'
+        // Zero blur, hard offset: a stacked sheet, not a glow.
+        block: '4px 4px 0 0 rgba(123, 82, 70, 0.18)',
+        'block-sm': '2px 2px 0 0 rgba(123, 82, 70, 0.22)',
+        none: 'none'
       },
       transitionTimingFunction: {
-        // One easing for every panel and every hover. Consistency reads premium.
+        // One easing for every panel and hover in the system.
         drape: 'cubic-bezier(0.22, 1, 0.36, 1)'
       },
       transitionDuration: {
-        drape: '520ms'
+        drape: '420ms'
       },
       keyframes: {
         'wisp-drift': {
@@ -67,19 +79,13 @@ const config: Config = {
           '50%': { transform: 'translateY(-3px) rotate(-4deg)' }
         },
         'rise-in': {
-          from: { opacity: '0', transform: 'translateY(14px)' },
+          from: { opacity: '0', transform: 'translateY(10px)' },
           to: { opacity: '1', transform: 'translateY(0)' }
-        },
-        'orbit': {
-          from: { transform: 'rotate(0deg)' },
-          to: { transform: 'rotate(360deg)' }
         }
       },
       animation: {
         'wisp-drift': 'wisp-drift 6s ease-in-out infinite',
-        'rise-in': 'rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
-        // Slow enough to read as a machined object, not a spinner.
-        orbit: 'orbit 64s linear infinite'
+        'rise-in': 'rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both'
       }
     }
   },

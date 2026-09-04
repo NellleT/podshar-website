@@ -5,20 +5,21 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from '@/i18n/routing';
 import { LeftSidebar } from './LeftSidebar';
 import { RightAIChat } from './RightAIChat';
+import { PodsharWordmark } from './PodsharMark';
 import type { MemberProfile, QuickStats } from '@/lib/types';
 
 /**
  * The three-column shell.
  *
- * The left panel *pushes* rather than overlays, which is the whole reason this
- * is a flex row and not a fixed panel over a dimmed page. The two breakpoints
- * behave differently on purpose:
+ * The left panel *pushes* rather than overlays, which is why this is a flex row
+ * and not a fixed panel over a dimmed page. The two breakpoints differ on
+ * purpose:
  *
  *   below lg — `min-w-full` keeps the canvas a full viewport wide, so opening
  *              the panel slides the canvas off to the right (a real drawer
- *              push) instead of crushing it into 130px of unusable column.
+ *              push) instead of crushing it into an unusable column.
  *   lg and up — `lg:min-w-0` lets the canvas give up width instead, so the
- *              greeting and the seal re-centre in the space that is left.
+ *              bento grid re-flows into the space that is left.
  *
  * `overflow-x-clip` hides the mobile overhang. It is `clip` rather than
  * `hidden` deliberately: `overflow-x: hidden` forces the computed `overflow-y`
@@ -60,21 +61,24 @@ export function AppShell({
         stats={stats}
       />
 
-      <div className="relative flex min-w-full flex-1 flex-col lg:min-w-0">
-        {/* The trigger sits inside the canvas, so the push carries it along. */}
-        <button
-          type="button"
-          onClick={() => setNavOpen(true)}
-          aria-label={t('openMenu')}
-          aria-expanded={navOpen}
-          aria-controls="podshar-nav"
-          className="group absolute left-5 top-5 z-20 flex h-11 w-11 flex-col items-start justify-center gap-[6px] sm:left-8 sm:top-8"
-        >
-          {/* Three hairlines, the middle one short. Catalogue, not hamburger. */}
-          <span className="h-px w-7 bg-ink transition-all duration-drape ease-drape group-hover:w-9 group-hover:bg-clay" />
-          <span className="h-px w-4 bg-ink transition-all duration-drape ease-drape group-hover:w-9 group-hover:bg-clay" />
-          <span className="h-px w-7 bg-ink transition-all duration-drape ease-drape group-hover:w-9 group-hover:bg-clay" />
-        </button>
+      <div className="flex min-w-full flex-1 flex-col lg:min-w-0">
+        {/* Top bar. The trigger lives in the flow, so the push carries it. */}
+        <header className="flex items-center justify-between border-b border-rule px-3 py-3 sm:px-4">
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            aria-label={t('openMenu')}
+            aria-expanded={navOpen}
+            aria-controls="podshar-nav"
+            className="group flex h-10 w-10 flex-col items-center justify-center gap-[5px] border border-rule transition-colors duration-drape ease-drape hover:bg-sand"
+          >
+            <span className="h-px w-4 bg-ink transition-all duration-drape ease-drape group-hover:w-5" />
+            <span className="h-px w-4 bg-ink transition-all duration-drape ease-drape group-hover:w-3" />
+            <span className="h-px w-4 bg-ink transition-all duration-drape ease-drape group-hover:w-5" />
+          </button>
+
+          <PodsharWordmark className="text-[0.6rem] font-medium text-ink-muted" />
+        </header>
 
         <main className="flex flex-1 flex-col">{children}</main>
       </div>

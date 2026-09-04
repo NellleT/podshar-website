@@ -15,7 +15,9 @@
     "enterCaption": "Войти в хаб",
     "openMenu": "Открыть меню",
     "closeMenu": "Закрыть меню",
-    "language": "Язык"
+    "language": "Язык",
+    "greetingLabel": "Добро пожаловать",
+    "memberLabel": "Участник"
   },
   "sidebar": {
     "profile": "Профиль",

@@ -17,9 +17,7 @@
   body {
     background-color: var(--canvas);
     color: var(--ink);
-    font-feature-settings: 'kern' 1, 'liga' 1;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
   }
 
   ::selection {
@@ -27,10 +25,10 @@
     color: var(--canvas);
   }
 
-  /* Keyboard focus only. A lookbook should not show rings to mouse users. */
+  /* Keyboard focus only. A square outline, to match the blocks. */
   :focus-visible {
-    outline: 1px solid var(--clay);
-    outline-offset: 3px;
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -45,13 +43,19 @@
 }
 
 @layer components {
-  /* Uppercase micro-label used for every section header and stat caption. */
-  .ps-label {
-    @apply text-label font-sans uppercase text-ink-muted;
+  /* A bento block: solid outline, sharp corners, flat fill. The one surface
+     primitive in the system — every panel and card is this. */
+  .block-card {
+    @apply border border-rule bg-canvas;
   }
 
-  /* Hairline rule. The whole layout is built from these, not from boxes. */
+  /* Uppercase micro-label used for every section header and stat caption. */
+  .ps-label {
+    @apply text-label font-medium uppercase text-ink-muted;
+  }
+
+  /* Divider between stacked blocks inside a panel. */
   .ps-rule {
-    @apply border-t border-hairline;
+    @apply border-t border-rule;
   }
 }

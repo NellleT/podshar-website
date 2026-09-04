@@ -11,14 +11,14 @@ import type { MemberProfile, QuickStats } from '@/lib/types';
 /**
  * The drawer. Closed on first paint, and it pushes the canvas when it opens.
  *
- * The push is done by animating this element's own width from 0, so it is a
+ * The push is done by animating this element's own width from zero, so it is a
  * real flex sibling of the canvas rather than a panel floating over one. Two
- * details make that read smoothly:
+ * details make that read cleanly: `overflow-hidden` clips the contents while
+ * the width animates, and the inner wrapper is pinned to the full open width so
+ * the text inside never reflows mid-animation.
  *
- *   `overflow-hidden` on the outer element clips the contents while the width
- *   animates, and the inner wrapper is pinned to the full open width so the
- *   text inside never reflows mid-animation. Reflowing type during a transition
- *   is the tell that separates a cheap drawer from an expensive one.
+ * Contents are stacked blocks — profile, stats, navigation — each divided by a
+ * solid rule rather than a card of its own, so the panel stays one object.
  */
 export function LeftSidebar({
   open,
@@ -56,20 +56,20 @@ export function LeftSidebar({
       // Collapsed content stays in the DOM, so without `inert` a keyboard user
       // tabs into links that are clipped to zero width.
       inert={!open}
-      className={`shrink-0 overflow-hidden border-ink/10 bg-canvas-sunk transition-[width] duration-drape ease-drape ${
-        open ? 'w-sidebar border-r lg:w-sidebar-lg' : 'w-0 border-r-0'
+      className={`shrink-0 overflow-hidden bg-canvas-sunk transition-[width] duration-drape ease-drape ${
+        open ? 'w-sidebar border-r border-rule lg:w-sidebar-lg' : 'w-0'
       }`}
     >
       {/* Pinned to the open width so nothing reflows while the width animates. */}
       <div className="flex h-full w-sidebar flex-col lg:w-sidebar-lg">
-        <header className="flex items-center justify-between px-6 pb-5 pt-6">
-          <PodsharWordmark className="text-xs text-ink" />
+        <header className="flex items-center justify-between border-b border-rule px-5 py-3">
+          <PodsharWordmark className="text-[0.6rem] font-medium text-ink" />
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label={tHome('closeMenu')}
-            className="text-xl leading-none text-ink-muted transition-colors hover:text-ink"
+            className="grid h-8 w-8 place-items-center border border-rule text-sm leading-none text-ink-muted transition-colors duration-drape hover:bg-sand hover:text-ink"
           >
             &#215;
           </button>
@@ -77,10 +77,10 @@ export function LeftSidebar({
 
         <div className="flex-1 overflow-y-auto overscroll-contain">
           {/* Profile */}
-          <section className="border-t border-hairline px-6 py-5">
+          <section className="border-b border-rule px-5 py-5">
             <p className="ps-label mb-4">{t('profile')}</p>
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-sand font-display text-sm text-ink">
+              <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden border border-ink bg-sand text-sm font-medium text-ink">
                 {profile.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -89,9 +89,7 @@ export function LeftSidebar({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-base text-ink">
-                  {profile.displayName}
-                </p>
+                <p className="truncate text-base text-ink">{profile.displayName}</p>
                 <p className="truncate text-xs text-ink-muted">@{profile.handle}</p>
               </div>
               {/* Editing lands in Phase 2. The affordance is reserved now. */}
@@ -105,36 +103,35 @@ export function LeftSidebar({
             </div>
           </section>
 
-          {/* Live quick-stats */}
-          <section className="border-t border-hairline px-6 py-5">
+          {/* Live quick-stats, as two blocks side by side */}
+          <section className="border-b border-rule px-5 py-5">
             <p className="ps-label mb-4">{t('stats')}</p>
-            <dl className="space-y-3">
-              <StatRow label={t('dotaPts')} value={stats.dotaPts} />
-              <StatRow label={t('brawlCups')} value={stats.brawlCups} />
+            <dl className="grid grid-cols-2 gap-2">
+              <StatBlock label={t('dotaPts')} value={stats.dotaPts} />
+              <StatBlock label={t('brawlCups')} value={stats.brawlCups} />
             </dl>
           </section>
 
-          {/* Five destinations. The index lives behind the seal. */}
-          <nav className="border-t border-hairline px-6 py-5">
+          {/* Five destinations. The index lives behind the sun. */}
+          <nav className="border-b border-rule px-5 py-5">
             <p className="ps-label mb-3">{t('navigation')}</p>
-            <ul>
+            <ul className="space-y-1">
               {PRIMARY_NAV.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`group -mx-3 flex items-center justify-between rounded-sm px-3 py-2.5 font-display text-base transition-colors duration-300 ease-drape hover:bg-sand ${
-                        isActive ? 'text-ink' : 'text-ink-muted hover:text-ink'
+                      className={`flex items-center justify-between border px-3 py-2.5 text-sm transition-colors duration-drape ease-drape ${
+                        isActive
+                          ? 'border-ink bg-sand text-ink'
+                          : 'border-transparent text-ink-muted hover:border-rule hover:bg-sand hover:text-ink'
                       }`}
                     >
                       <span>{tNav(item.labelKey)}</span>
-                      <span
-                        aria-hidden="true"
-                        className={`h-px bg-clay transition-all duration-drape ease-drape ${
-                          isActive ? 'w-5' : 'w-0 group-hover:w-5'
-                        }`}
-                      />
+                      <span aria-hidden="true" className="text-xs text-ink-faint">
+                        &#8594;
+                      </span>
                     </Link>
                   </li>
                 );
@@ -144,28 +141,17 @@ export function LeftSidebar({
             {/* The wireframe's down-arrow: everything the five links leave out. */}
             <Link
               href="/hub"
-              className="group -mx-3 mt-2 flex items-center justify-between rounded-sm border-t border-hairline px-3 pb-1 pt-3 text-ink-muted transition-colors duration-300 hover:text-ink"
+              className="mt-3 flex items-center justify-between border border-rule px-3 py-2.5 transition-colors duration-drape hover:bg-sand"
             >
               <span className="ps-label">{t('more')}</span>
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-                className="h-4 w-4 transition-transform duration-drape ease-drape group-hover:translate-y-0.5"
-              >
-                <path
-                  d="M8 3v9M4.5 8.5 8 12l3.5-3.5"
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <span aria-hidden="true" className="text-xs text-ink-muted">
+                &#8595;
+              </span>
             </Link>
           </nav>
         </div>
 
-        <footer className="flex items-center justify-between border-t border-hairline px-6 py-4">
+        <footer className="flex items-center justify-between border-t border-rule px-5 py-3">
           <LocaleSwitcher />
           <button type="button" className="ps-label transition-colors hover:text-ink">
             {t('signOut')}
@@ -176,13 +162,13 @@ export function LeftSidebar({
   );
 }
 
-function StatRow({ label, value }: { label: string; value: number | null }) {
+function StatBlock({ label, value }: { label: string; value: number | null }) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
-      <dt className="text-xs text-ink-muted">{label}</dt>
-      <dd className="font-display text-xl tabular-nums text-ink">
+    <div className="border border-rule bg-canvas p-3">
+      <dt className="text-[0.6rem] uppercase tracking-label text-ink-muted">{label}</dt>
+      <dd className="mt-2 text-xl font-light tabular-nums text-ink">
         {value === null ? (
-          <span className="inline-block h-4 w-12 animate-pulse rounded-sm bg-sand align-middle" />
+          <span className="inline-block h-5 w-10 animate-pulse bg-sand align-middle" />
         ) : (
           value.toLocaleString()
         )}

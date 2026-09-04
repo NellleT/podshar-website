@@ -65,7 +65,7 @@ export function PodsharMark({
 export function PodsharWordmark({ className = '' }: { className?: string }) {
   return (
     <span
-      className={`font-display uppercase tracking-wordmark ${className}`}
+      className={`uppercase tracking-wordmark ${className}`}
       aria-label="Podshar"
     >
       Podshar

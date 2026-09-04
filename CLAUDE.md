@@ -95,3 +95,96 @@ components/LeftSidebar.tsx (with the push-animation logic).
 components/RightAIChat.tsx (desktop persistent, mobile slide-in).
 
 
+http://localhost:3000/en/hub
+
+
+Промпт 3 (версия 0.3 — Block-based Minimalism + интерактивная кнопка «Солнце»):
+
+Act as an Expert Full-Stack Software Architect and Creative Developer with 10+ years of experience. We are pivoting the UI/UX design for the "Podshar" application. The previous iteration felt too much like an e-commerce platform. We are stripping it down to a clean, block-based minimalism while preserving the core layout structure.
+
+Please read the previous context in CLAUDE.md, but OVERRIDE the visual design rules with the following strictly new specifications:
+
+1. ARCHITECTURE & LAYOUT RETAINMENT (Based on UI Wireframe)
+- Preserve the overall structural layout:
+  * The Collapsible Left Sidebar (Profile on top, stats below, navigation links) MUST REMAIN.
+  * The Right AI Assistant ("Podshar") widget/panel MUST REMAIN.
+  * The Central Homepage canvas with the time-based dynamic greeting MUST REMAIN.
+- Strip away all complex e-commerce gradients, unnecessary detail layers, and elaborate commercial styling.
+
+2. NEW DESIGN SYSTEM (Block-based Minimalism)
+- Aesthetic: Pure, structural block-based design (Bento box style), heavily inspired by clean, modern developer portfolios (like https://trqwaa.github.io/portfolio-site-by-Tymofii/). Sharp edges, solid borders, clean spatial separation, and zero visual clutter.
+- Typography: Force "Roboto" (sans-serif) across the entire application for all headings, labels, stats, and text.
+- Color Palette: Keep the minimal cream/brown palette (#f7efe5 background, #7b5246 for borders/text, #D8C3B1 & #A88B7D for accents), but apply them strictly for a flat, blocky look with distinct border outlines.
+
+3. THE CENTERPIECE: INTERACTIVE "ПХ" SUN BUTTON
+- The center of the homepage must feature the prominent, highly interactive "ПХ" transition button.
+- Visual Concept: The button acts like a reactive "Sun".
+- Interaction Mechanics: Implement precise mouse-tracking logic (e.g., using `onMouseMove` with `useRef`, `framer-motion`, or CSS custom variables).
+- Behavior 1 (Proximity): Dynamically calculate the distance between the cursor and the center of the button. The closer the cursor gets to the center, the brighter/more intense the button's "rays" or aura become.
+- Behavior 2 (Directionality & Rays): The sun's "rays" must calculate the exact angle relative to the cursor (using `Math.atan2`) and physically stretch/pull towards the current mouse position.
+- The text "ПХ" stays anchored at the center of this object.
+
+DELIVERABLES:
+1. Update `tailwind.config.ts` to enforce the Roboto font and block-style utilities.
+2. Refactor `page.tsx` and the main AppShell layout to maintain the Left Sidebar and Right AI Chat using a clean, flat Bento-block structure.
+3. Write a dedicated client-side component (`PHButton.tsx`) containing the complete JavaScript math, React Hooks, and Framer Motion logic to execute the "Sun" cursor-tracking and ray-stretching mechanics.
+
+
+ИЗМЕНЕНИЯ, ВНЕСЁННЫЕ ПО ПРОМПТУ 3
+=================================
+
+Дизайн-система (tailwind.config.ts, src/app/globals.css)
+- Один шрифт Roboto (300/400/500/700, subsets latin + latin-ext + cyrillic).
+  Playfair Display и Inter удалены. Токен `font-display` оставлен как алиас
+  на Roboto, чтобы ни один вызов не пришлось менять.
+- Палитра не изменилась. Изменилось применение: плоские заливки, сплошные
+  контуры, острые углы. `borderRadius.DEFAULT` = 0px.
+- Новый токен `rule` (rgba(123,82,70,0.34)) — контур всех бенто-блоков.
+- Тени с размытием убраны. Вместо них `shadow-block` — жёсткое смещение
+  без блюра (эффект наложенного листа, а не свечения).
+- Новый CSS-класс `.block-card` — единственный примитив поверхности.
+
+Разметка
+- src/app/[locale]/page.tsx — бенто-сетка на 6 колонок: приветствие во всю
+  ширину, солнце в широком блоке на две строки, два мета-блока рядом.
+  Высоты строк `auto`, не `1fr`: строка на `1fr` съедает весь вьюпорт и
+  оставляет мелкие блоки пустыми.
+- src/components/AppShell.tsx — верхняя панель с триггером меню внутри
+  потока. Механика push сохранена без изменений.
+- src/components/LeftSidebar.tsx, RightAIChat.tsx, hub/page.tsx — переведены
+  на плоские блоки со сплошными контурами.
+
+Кнопка-солнце (src/components/PHButton.tsx, новый)
+- 24 луча, framer-motion 13. Два независимых сигнала:
+  proximity (Math.hypot, возведён в квадрат) и направление (Math.atan2).
+- Выравнивание луча = cos(Δ) в 4-й степени — узкий лепесток, солнце тянется
+  к курсору, а не раздувается равномерно.
+- Всё считается через motion values, вне рендера React: иначе 24 луча
+  давали бы 24 ре-рендера на каждый кадр движения мыши.
+- Учитывается prefers-reduced-motion: слушатель не навешивается.
+- PhSeal.tsx удалён.
+
+Исправленные баги (найдены при проверке в браузере, не по промпту)
+1. Солнце загружалось полностью зажжённым: motion values начинались с (0,0),
+   что равно «курсор ровно в центре». Теперь стартуют на расстоянии FALLOFF.
+2. Лучи были не видны: они начинались на радиусе 66px, а половина ширины
+   квадратного ядра — 72px, то есть лучи прятались за ядром. Введена функция
+   rayOffset(): граница квадрата = half / max(|sin|, |cos|), а не константа.
+3. RangeError: Incorrect locale information provided. Запрос /favicon.ico
+   попадал в маршрут [locale] как locale = "favicon.ico". Layout и page
+   рендерятся параллельно, поэтому notFound() в layout не спасал page —
+   Intl.DateTimeFormat падал раньше. Добавлен src/lib/locale.ts
+   (resolveLocale), который вызывают ВСЕ страницы под [locale].
+   Плюс добавлен src/app/icon.svg, чтобы /favicon.ico вообще не доходил
+   до маршрута.
+4. Hydration mismatch: сервер сериализовал float как "-81.282px", клиент —
+   как "-81.28203230275511px". rayOffset() возвращает toFixed(2).
+
+Зависимости
+- Добавлен framer-motion ^13.2.0.
+
+Проверено
+- tsc --noEmit — чисто.
+- Маршруты /ru /en /de/hub — 200; /favicon.ico и /nonsense-path — 404 без
+  исключений в логе сервера.
+- Консоль браузера (через CDP) — ни ошибок, ни предупреждений.
