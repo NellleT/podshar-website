@@ -7,10 +7,10 @@ import {
   useMotionTemplate,
   useSpring,
   useTransform,
-  useReducedMotion,
-  type MotionValue
+  useReducedMotion
 } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { ReactorVines } from './ReactorVines';
 
 /** Cursor distance in px at which the reactor is fully at rest. */
 const FALLOFF = 460;
@@ -27,56 +27,6 @@ const RESTING = 0.16;
 const PRESS_LINES = 6;
 
 /**
- * The rays, in three tiers.
- *
- * One tier of twelve evenly-lit rays under one mask gives every ray the same
- * length, and twelve equal spikes around a circle is a cog, not a sun. Splitting
- * them into long, medium and short — each with its own mask reach, its own blur
- * and its own rotation speed — means no two rays end at the same radius and the
- * three tiers drift out of phase forever. That drift is what stops the shape
- * from ever settling into a polygon.
- *
- * Bearings inside a tier are spaced unevenly on purpose, and none comes within
- * `RAY_HALF` of 0°/360°, which keeps the conic gradient's wrap point inside a
- * gap where nothing is being drawn.
- */
-const RAY_TIERS = [
-  {
-    angles: [14, 121, 208, 297],
-    half: 5,
-    // Reach: opaque as it leaves the fill, gone by the outer edge.
-    mask:
-      'radial-gradient(circle, transparent 13%, rgb(0 0 0 / 0.5) 19%, rgb(0 0 0 / 0.95) 33%, rgb(0 0 0 / 0.5) 62%, rgb(0 0 0 / 0.16) 80%, transparent 96%)',
-    blur: 6,
-    // Long rays carry more of the alpha: they are the ones read as rays at all,
-    // while the short tier is really just texture on the fill.
-    gain: 1.3,
-    spin: '71s',
-    reverse: false
-  },
-  {
-    angles: [47, 152, 239, 331],
-    half: 6.5,
-    mask:
-      'radial-gradient(circle, transparent 13%, rgb(0 0 0 / 0.6) 20%, rgb(0 0 0 / 0.9) 31%, rgb(0 0 0 / 0.4) 52%, transparent 74%)',
-    blur: 7,
-    gain: 1,
-    spin: '52s',
-    reverse: true
-  },
-  {
-    angles: [31, 78, 96, 178, 265, 312],
-    half: 8,
-    mask:
-      'radial-gradient(circle, transparent 12%, rgb(0 0 0 / 0.7) 18%, rgb(0 0 0 / 0.8) 26%, rgb(0 0 0 / 0.3) 41%, transparent 58%)',
-    blur: 9,
-    gain: 0.75,
-    spin: '96s',
-    reverse: false
-  }
-] as const;
-
-/**
  * Two decimals, always.
  *
  * These numbers are interpolated into a gradient string that is rendered on the
@@ -85,50 +35,6 @@ const RAY_TIERS = [
  * every paint. Fixed precision makes both sides emit the same characters.
  */
 const fixed = (n: number) => n.toFixed(2);
-
-/**
- * The angular profile of one ray, as fractions of RAY_HALF and of full alpha.
- *
- * Three stops a side, not one. A ray built from `0 -> a -> 0` is a triangle:
- * the alpha ramps linearly, so the eye reads two straight edges meeting at a
- * point and the whole ring looks cut from paper. These weights approximate a
- * raised cosine, which has no straight segment anywhere and no corner at the
- * tip — the shape a light actually makes.
- */
-const RAY_PROFILE = [
-  [1, 0],
-  [0.72, 0.12],
-  [0.42, 0.46],
-  [0, 1]
-] as const;
-
-/**
- * The conic gradient for one tier of rays.
- *
- * Written out by hand this was a 40-stop string nobody could read or safely
- * edit; as a function the geometry is the tables at the top of the file.
- */
-function buildRays(
-  angles: readonly number[],
-  half: number,
-  alpha: number
-): string {
-  const red = (a: number) => `rgb(var(--reactor) / ${fixed(a)})`;
-  const stops = [`${red(0)} 0deg`];
-  for (const angle of angles) {
-    // Leading flank, peak, trailing flank — the profile mirrored about `angle`.
-    for (let i = RAY_PROFILE.length - 1; i >= 0; i--) {
-      const [offset, weight] = RAY_PROFILE[i];
-      stops.push(`${red(alpha * weight)} ${fixed(angle - offset * half)}deg`);
-    }
-    for (let i = 1; i < RAY_PROFILE.length; i++) {
-      const [offset, weight] = RAY_PROFILE[i];
-      stops.push(`${red(alpha * weight)} ${fixed(angle + offset * half)}deg`);
-    }
-  }
-  stops.push(`${red(0)} 360deg`);
-  return `conic-gradient(from 0deg, ${stops.join(', ')})`;
-}
 
 /**
  * The "ПХ" reactor.
@@ -147,12 +53,11 @@ function buildRays(
  *               halo's centre a clamped distance that way and slides the whole
  *               ray ring after it, so the light leans toward the pointer.
  *
- * The glow used to be a wide flood of red — two offset petals under a big soft
- * gradient — which filled the block and was simply loud. It is now mostly rays:
- * the fill is small and quiet, and the mask makes each ray brightest where it
- * meets the core and dissolves outward, so they read as reaching *in* to the
- * button rather than spraying out of it. Same trick as a real sun: what you
- * notice is the direction, not the area.
+ * The light is two parts that barely talk to each other. The fill is a small
+ * quiet halo that only has to bridge core and vines. The vines are the show:
+ * SVG curves that grow toward the pointer and curl around it, drawn by
+ * `ReactorVines`. They are deliberately not derived from the fill — a gradient
+ * cannot bend, and bending is the entire idea.
  *
  * The core and the label never move. Only the light does.
  *
@@ -226,23 +131,28 @@ export function PHButton() {
     fixed(50 + Math.sin(b) * l)
   );
 
-  // The ray ring slides bodily toward the cursor — a small offset, in px, on top
-  // of its own slow rotation. Shifting the layer is what makes the rays lean;
-  // the conic gradient itself has no notion of a direction to favour.
-  const rayShiftX = useTransform<number, number>([bearing, intensity], ([b, i]) =>
-    Math.cos(b) * 14 * (0.3 + 0.7 * i)
-  );
-  const rayShiftY = useTransform<number, number>([bearing, intensity], ([b, i]) =>
-    Math.sin(b) * 14 * (0.3 + 0.7 * i)
-  );
+  // Pointer distance in px, and half the container's width, which is what turns
+  // px into the vines' viewBox units. The size is measured rather than assumed
+  // because the container is `min(26rem, 92vw)` and so is not a constant.
+  const distance = useTransform<number, number>([dx, dy], ([x, y]) => Math.hypot(x, y));
+  const halfSize = useMotionValue(208);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => halfSize.set(el.getBoundingClientRect().width / 2 || 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [halfSize]);
 
   // Quiet numbers. The old fill peaked at 0.80 alpha across a 20rem circle,
   // which is a lot of red on a near-white page; the rays carry the effect now,
   // so the fill only has to bridge the gap between the core and them.
-  const hot = useTransform(intensity, (i) => fixed(0.16 + 0.26 * i));
-  const mid = useTransform(intensity, (i) => fixed(0.07 + 0.16 * i));
-  const far = useTransform(intensity, (i) => fixed(0.03 + 0.07 * i));
-  const rayAlpha = useTransform(intensity, (i) => 0.13 + 0.3 * i);
+  const hot = useTransform(intensity, (i) => fixed(0.14 + 0.2 * i));
+  const mid = useTransform(intensity, (i) => fixed(0.06 + 0.12 * i));
+  const far = useTransform(intensity, (i) => fixed(0.025 + 0.05 * i));
 
   // Four stops so the fill has a long tail. The tail is the point: it has to
   // still be carrying colour out at 60-70% of the radius, because that is where
@@ -284,17 +194,15 @@ export function PHButton() {
           />
         </span>
 
-        {/* Rays, in three tiers of different reach and speed. */}
-        {RAY_TIERS.map((tier) => (
-          <RayTier
-            key={tier.spin}
-            tier={tier}
-            alpha={rayAlpha}
-            shiftX={rayShiftX}
-            shiftY={rayShiftY}
-            still={Boolean(reduceMotion)}
-          />
-        ))}
+        {/* The vines. Sized to the whole box, not the aura: they need room to
+            reach past the glow toward wherever the pointer is. */}
+        <ReactorVines
+          bearing={bearing}
+          intensity={intensity}
+          distance={distance}
+          halfSize={halfSize}
+          still={Boolean(reduceMotion)}
+        />
 
         {/* The core. Fixed dead centre, and the only red in the palette.
             Deliberately borderless: an outline here was drawing a hard ring at
@@ -328,66 +236,5 @@ export function PHButton() {
         {caption}
       </span>
     </div>
-  );
-}
-
-/**
- * One tier of rays: a conic gradient, masked to a reach and blurred.
- *
- * Three nested elements because three transforms have to compose and CSS only
- * gives an element one `transform`: the outer one leans toward the cursor, the
- * middle one turns, the inner one carries the paint.
- */
-function RayTier({
-  tier,
-  alpha,
-  shiftX,
-  shiftY,
-  still
-}: {
-  tier: (typeof RAY_TIERS)[number];
-  alpha: MotionValue<number>;
-  shiftX: MotionValue<number>;
-  shiftY: MotionValue<number>;
-  still: boolean;
-}) {
-  const image = useTransform(alpha, (a) =>
-    buildRays(tier.angles, tier.half, a * tier.gain)
-  );
-
-  return (
-    <motion.span
-      aria-hidden="true"
-      style={{ x: shiftX, y: shiftY }}
-      className="pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)]"
-    >
-      <span
-        className={`block h-full w-full ${still ? '' : 'animate-sun-turn'}`}
-        style={
-          still
-            ? undefined
-            : {
-                animationDuration: tier.spin,
-                animationDirection: tier.reverse ? 'reverse' : 'normal'
-              }
-        }
-      >
-        <motion.span
-          style={{
-            backgroundImage: image,
-            maskImage: tier.mask,
-            WebkitMaskImage: tier.mask,
-            // A conic gradient is drawn by sampling angles, so at low alpha it
-            // bands into visible facets that no number of extra stops fixes. A
-            // small blur dissolves the facets and rounds the tips at the same
-            // time. Each tier is one composited layer that only ever rotates,
-            // so the browser blurs it once and reuses the raster.
-            filter: `blur(${tier.blur}px)`,
-            willChange: 'transform'
-          }}
-          className="block h-full w-full rounded-full"
-        />
-      </span>
-    </motion.span>
   );
 }
