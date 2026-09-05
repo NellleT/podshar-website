@@ -274,6 +274,7 @@ export function PHButton() {
           intensity={lit}
           distance={distance}
           halfSize={halfSize}
+          burst={punch}
           still={Boolean(reduceMotion)}
         />
 

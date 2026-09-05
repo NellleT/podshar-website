@@ -30,6 +30,11 @@ import { useAnimationFrame, type MotionValue } from 'framer-motion';
  *   drift    a slow per-vine wobble, so the field is alive with the mouse
  *            sitting still. Without it the vines are a diagram.
  *
+ *   burst    a press throws them apart: the grip releases, each vine swings
+ *            away from its neighbours, and everything closes again as the value
+ *            decays. Pushing them straight outward alone was indistinguishable
+ *            from the brightness rising.
+ *
  * Nothing here touches React state. One `useAnimationFrame` reads the motion
  * values, computes 17 paths and writes them straight onto the DOM nodes; a
  * re-render per frame with 17 children would be an order of magnitude dearer.
@@ -58,6 +63,16 @@ const CURL = 0.5;
 const HOOK = 0.42;
 /** Cursor distance, in viewBox units, past which reaching stops helping. */
 const REACH_CLAMP = 96;
+/**
+ * How far a press throws the vines apart, in radians.
+ *
+ * The shockwave should not only push the vines outward — outward alone just
+ * makes them longer, which the brightness was already doing. It has to break
+ * the grip: the vines flanking the cursor swing away from each other, the hold
+ * opens, and then as the punch decays they close again. That open-and-close is
+ * the whole gesture.
+ */
+const SPLAY = 0.34;
 
 const fixed = (n: number) => n.toFixed(2);
 
@@ -75,15 +90,26 @@ function vine(
   bearing: number,
   intensity: number,
   cursorR: number,
-  t: number
+  t: number,
+  burst: number
 ): Shape {
-  const a = (angleDeg * Math.PI) / 180;
+  const base = (angleDeg * Math.PI) / 180;
+
+  // Alignment is measured on the vine's resting bearing, so a vine that was
+  // holding the cursor keeps its share of the length and brightness while it is
+  // being thrown aside. Measuring it after the splay would make the outermost
+  // vines dim exactly as they fly, which reads as them giving up rather than
+  // being pushed.
+  const align = Math.max(0, Math.cos(base - bearing));
+  const lobe = align * align;
+
+  // The splay itself. `sin(base - bearing)` is zero for the vine pointing dead
+  // at the cursor and flips sign either side of it, so neighbours swing apart
+  // rather than all rotating the same way; multiplying by `align` keeps the
+  // vines on the far side of the ring out of it.
+  const a = base + burst * SPLAY * Math.sin(base - bearing) * align;
   const cos = Math.cos(a);
   const sin = Math.sin(a);
-
-  // 1 when this vine points at the cursor, 0 at a right angle, 0 behind.
-  const align = Math.max(0, Math.cos(a - bearing));
-  const lobe = align * align;
 
   // Two independent wobbles per vine, at rates that do not divide evenly, so
   // the field never falls into step with itself.
@@ -91,7 +117,10 @@ function vine(
 
   const len =
     (LEN_MIN + (LEN_MAX - LEN_MIN) * (0.14 + 0.86 * lobe)) * (0.7 + 0.3 * intensity) +
-    drift * 2.6;
+    drift * 2.6 +
+    // A radial shove on top of the splay: the wave passes through and the vines
+    // ride it out before settling back.
+    burst * 11 * (0.3 + 0.7 * lobe);
 
   // Where the vine would end if it just grew straight out.
   const tipR = ROOT + len;
@@ -114,7 +143,9 @@ function vine(
   const ringX = targetX + (ux / un) * RING;
   const ringY = targetY + (uy / un) * RING;
 
-  const grip = GRIP * lobe * (0.3 + 0.7 * intensity);
+  // The press opens the hand. Most of the grip is released at full burst and
+  // comes back as it decays.
+  const grip = GRIP * lobe * (0.3 + 0.7 * intensity) * (1 - 0.8 * burst);
   const tipX = freeX + (ringX - freeX) * grip;
   const tipY = freeY + (ringY - freeY) * grip;
 
@@ -133,7 +164,7 @@ function vine(
   // Second control point: off the tip, along the tangent of the ring. That
   // tangent is what makes the last stretch of the curve wrap the cursor instead
   // of arriving head-on at it.
-  const hook = HOOK * len * lobe * grip * side;
+  const hook = HOOK * len * lobe * grip * side * (1 - 0.6 * burst);
   const c2X = tipX + (uy / un) * hook + (ux / un) * len * 0.12;
   const c2Y = tipY - (ux / un) * hook + (uy / un) * len * 0.12;
 
@@ -155,6 +186,7 @@ export function ReactorVines({
   intensity,
   distance,
   halfSize,
+  burst,
   still
 }: {
   bearing: MotionValue<number>;
@@ -163,6 +195,8 @@ export function ReactorVines({
   distance: MotionValue<number>;
   /** Half the container's width in px, for converting px to viewBox units. */
   halfSize: MotionValue<number>;
+  /** 1 at the instant of a press, decaying to 0. Opens the grip. */
+  burst: MotionValue<number>;
   still: boolean;
 }) {
   const paths = useRef<(SVGPathElement | null)[]>([]);
@@ -199,8 +233,9 @@ export function ReactorVines({
     // px -> viewBox units, where 100 is half the container.
     const cursorR = (distance.get() / half) * 100;
 
+    const bu = burst.get();
     for (let k = 0; k < VINE_ANGLES.length; k++) {
-      apply(k, vine(VINE_ANGLES[k], k, b, i, cursorR, t));
+      apply(k, vine(VINE_ANGLES[k], k, b, i, cursorR, t, bu));
     }
   });
 
@@ -208,14 +243,16 @@ export function ReactorVines({
   useEffect(() => {
     if (!still) return;
     for (let k = 0; k < VINE_ANGLES.length; k++) {
-      apply(k, vine(VINE_ANGLES[k], k, -Math.PI / 2, 0.16, REACH_CLAMP, 0));
+      apply(k, vine(VINE_ANGLES[k], k, -Math.PI / 2, 0.16, REACH_CLAMP, 0, 0));
     }
   }, [still]);
 
   // Server-rendered resting shapes. Same function, same rounding, so the
   // client's first frame overwrites them with identical numbers rather than
   // tripping hydration.
-  const rest = VINE_ANGLES.map((angle, k) => vine(angle, k, -Math.PI / 2, 0.16, REACH_CLAMP, 0));
+  const rest = VINE_ANGLES.map((angle, k) =>
+    vine(angle, k, -Math.PI / 2, 0.16, REACH_CLAMP, 0, 0)
+  );
 
   return (
     <svg
