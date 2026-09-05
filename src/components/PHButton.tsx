@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   motion,
   useMotionValue,
@@ -22,6 +22,19 @@ const FALLOFF = 460;
 const MAX_LEAN = 9;
 /** Where the aura sits when the pointer is absent (touch, or reduced motion). */
 const RESTING = 0.16;
+/** How many presses have their own retort before the counter takes over. */
+const PRESS_LINES = 6;
+
+/**
+ * Ray bearings, in degrees, and the half-width of each wedge.
+ *
+ * Twelve rays at spacings that are close to even but never actually even — 26°,
+ * 28°, 30°, 34° — so the ring reads as hand-drawn rather than machined. None of
+ * them come within `HALF` of 0° or 360°, which keeps the conic gradient's wrap
+ * point inside a gap where nothing is being drawn.
+ */
+const RAY_ANGLES = [10, 36, 62, 90, 120, 148, 174, 205, 232, 260, 292, 326];
+const RAY_HALF = 6;
 
 /**
  * Two decimals, always.
@@ -34,11 +47,31 @@ const RESTING = 0.16;
 const fixed = (n: number) => n.toFixed(2);
 
 /**
+ * The conic gradient for the rays, built from RAY_ANGLES.
+ *
+ * Each ray is three stops — transparent, alpha, transparent — so it is a spoke
+ * that fades in and out along the sweep instead of a wedge with sides. Written
+ * out by hand this was a 40-stop string nobody could read or safely edit; as a
+ * function the geometry is the array at the top of the file.
+ */
+function buildRays(alpha: number): string {
+  const red = (a: number) => `rgb(var(--reactor) / ${fixed(a)})`;
+  const stops = [`${red(0)} 0deg`];
+  for (const angle of RAY_ANGLES) {
+    stops.push(`${red(0)} ${angle - RAY_HALF}deg`);
+    stops.push(`${red(alpha)} ${angle}deg`);
+    stops.push(`${red(0)} ${angle + RAY_HALF}deg`);
+  }
+  stops.push(`${red(0)} 360deg`);
+  return `conic-gradient(from 0deg, ${stops.join(', ')})`;
+}
+
+/**
  * The "ПХ" reactor.
  *
- * A warning light: a small solid red core with a soft halo around it, breathing
- * slowly so it reads as armed rather than decorative. The joke is that it looks
- * consequential and does nothing at all.
+ * A warning light: a small solid red core, a tight halo, and twelve rays
+ * reaching in toward it. The joke is that it looks consequential and does
+ * nothing at all — press it and it just gets ruder.
  *
  * A pointer anywhere on the page drives two signals:
  *
@@ -47,27 +80,21 @@ const fixed = (n: number) => n.toFixed(2);
  *               closes in, instead of glowing faintly the entire time.
  *
  *   bearing     `Math.atan2` gives the exact angle to the cursor. It moves the
- *               radial gradient's centre a clamped distance that way, so the
- *               glow leans toward the pointer rather than swelling evenly.
+ *               halo's centre a clamped distance that way and slides the whole
+ *               ray ring after it, so the light leans toward the pointer.
  *
- * The glow is three layers, because one clean radial gradient read as a printed
- * circle — you could see exactly where it stopped:
+ * The glow used to be a wide flood of red — two offset petals under a big soft
+ * gradient — which filled the block and was simply loud. It is now mostly rays:
+ * the fill is small and quiet, and the mask makes each ray brightest where it
+ * meets the core and dissolves outward, so they read as reaching *in* to the
+ * button rather than spraying out of it. Same trick as a real sun: what you
+ * notice is the direction, not the area.
  *
- *   petals   two offset elliptical gradients behind the main one, each leaning
- *            its own way. Their union is lopsided, so the halo has no single
- *            silhouette to trace.
- *   rays     a conic gradient with uneven sectors, masked into a ring and
- *            turning very slowly. A sun has rays; this has the memory of them,
- *            which is what keeps it off a compass rose.
- *   edge     every stop reaches zero alpha inside a box with room to spare, so
- *            nothing ever meets a boundary while it is still visible.
+ * The core and the label never move. Only the light does.
  *
- * The core and the label never move. Only the light does — that asymmetry is
- * what sells it as something reacting to you rather than an animation on loop.
- *
- * Everything runs through motion values and `useMotionTemplate`, so the
- * gradients are rewritten on the elements directly and React never re-renders
- * during a mouse move.
+ * Everything runs through motion values, so the gradients are rewritten on the
+ * elements directly and React never re-renders during a mouse move. The press
+ * counter is the one piece of real state, and it only changes on click.
  *
  * `prefers-reduced-motion` parks the aura at a fixed intensity, drops the idle
  * breath and the turn, and never attaches the listener.
@@ -76,6 +103,7 @@ export function PHButton() {
   const t = useTranslations('home');
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
+  const [presses, setPresses] = useState(0);
 
   // Pointer offset from the core's centre, in px. Seeded a full falloff away so
   // the reactor loads dormant — (0, 0) would read as a cursor sitting on it.
@@ -122,8 +150,8 @@ export function PHButton() {
     return Math.max(linear * linear, h * 0.92);
   });
 
-  // Gradient centre, in percent of the aura box. Clamped by MAX_LEAN, and
-  // damped at distance so a far-off cursor does not drag a dim halo around.
+  // Halo centre, in percent of the aura box. Clamped by MAX_LEAN, and damped at
+  // distance so a far-off cursor does not drag a dim halo around.
   const bearing = useTransform<number, number>([dx, dy], ([x, y]) => Math.atan2(y, x));
   const lean = useTransform(intensity, (i) => MAX_LEAN * (0.4 + 0.6 * i));
 
@@ -134,59 +162,40 @@ export function PHButton() {
     fixed(50 + Math.sin(b) * l)
   );
 
-  // The petals lean off the main bearing by a fixed angle each and travel less
-  // far, so the halo reshapes as the cursor moves instead of sliding around
-  // rigidly. Their offsets from centre (46/47 and 55/54) are what make the
-  // resting shape lopsided before anything has moved at all.
-  const p1x = useTransform<number, string>([bearing, lean], ([b, l]) =>
-    fixed(46 + Math.cos(b + 0.9) * l * 0.7)
+  // The ray ring slides bodily toward the cursor — a small offset, in px, on top
+  // of its own slow rotation. Shifting the layer is what makes the rays lean;
+  // the conic gradient itself has no notion of a direction to favour.
+  const rayShiftX = useTransform<number, number>([bearing, intensity], ([b, i]) =>
+    Math.cos(b) * 14 * (0.3 + 0.7 * i)
   );
-  const p1y = useTransform<number, string>([bearing, lean], ([b, l]) =>
-    fixed(47 + Math.sin(b + 0.9) * l * 0.7)
-  );
-  const p2x = useTransform<number, string>([bearing, lean], ([b, l]) =>
-    fixed(55 + Math.cos(b - 1.3) * l * 0.5)
-  );
-  const p2y = useTransform<number, string>([bearing, lean], ([b, l]) =>
-    fixed(54 + Math.sin(b - 1.3) * l * 0.5)
+  const rayShiftY = useTransform<number, number>([bearing, intensity], ([b, i]) =>
+    Math.sin(b) * 14 * (0.3 + 0.7 * i)
   );
 
-  // The numbers are not arbitrary. The core is 112px across inside a 320px
-  // aura, so its edge lands at 17.5% of that box: `hot` is held flat out to
-  // 18%, which puts the densest red exactly where the solid circle ends. The
-  // glow therefore leaves the core at full strength and decays from there, and
-  // the two read as one object rather than a disc inside a separate halo.
-  //
-  // Below ~457px of viewport the aura shrinks with the screen while the core
-  // stays 112px, so that seam creeps outward — by then the whole object is
-  // small enough that the join is not what anyone is looking at.
-  //
-  // Alpha carries the whole effect — no blur filter, which would cost a repaint
-  // of the layer on every frame.
-  const hot = useTransform(intensity, (i) => fixed(0.34 + 0.46 * i));
-  const mid = useTransform(intensity, (i) => fixed(0.13 + 0.32 * i));
-  const petal = useTransform(intensity, (i) => fixed(0.07 + 0.2 * i));
-  const rayAlpha = useTransform(intensity, (i) => fixed(0.05 + 0.17 * i));
+  // Quiet numbers. The old fill peaked at 0.80 alpha across a 20rem circle,
+  // which is a lot of red on a near-white page; the rays carry the effect now,
+  // so the fill only has to bridge the gap between the core and them.
+  const hot = useTransform(intensity, (i) => fixed(0.16 + 0.26 * i));
+  const mid = useTransform(intensity, (i) => fixed(0.06 + 0.14 * i));
+  const rayAlpha = useTransform(intensity, (i) => 0.13 + 0.3 * i);
 
-  // Three gradients in one background, painted front to back: the dense centre
-  // is listed first so it stays on top of the two petals.
-  const aura = useMotionTemplate`radial-gradient(circle at ${gx}% ${gy}%, rgb(var(--reactor) / ${hot}) 0%, rgb(var(--reactor) / ${hot}) 18%, rgb(var(--reactor) / ${mid}) 38%, rgb(var(--reactor) / 0) 74%), radial-gradient(ellipse 58% 66% at ${p1x}% ${p1y}%, rgb(var(--reactor) / ${petal}) 0%, rgb(var(--reactor) / 0) 100%), radial-gradient(ellipse 70% 52% at ${p2x}% ${p2y}%, rgb(var(--reactor) / ${petal}) 0%, rgb(var(--reactor) / 0) 100%)`;
+  const aura = useMotionTemplate`radial-gradient(circle at ${gx}% ${gy}%, rgb(var(--reactor) / ${hot}) 0%, rgb(var(--reactor) / ${hot}) 18%, rgb(var(--reactor) / ${mid}) 34%, rgb(var(--reactor) / 0) 58%)`;
+  const rays = useTransform(rayAlpha, buildRays);
+  const auraScale = useTransform(intensity, [0, 1], [0.9, 1.08]);
 
-  // Five wedges at widths that do not divide 360 evenly, so no two neighbours
-  // match and the ring never resolves into a pattern. Every wedge fades through
-  // transparent rather than ending on a hard stop, so there are no spokes with
-  // sides — only an unevenness in the light.
-  //
-  // Both ends of the sweep are pinned to zero alpha. A conic gradient wraps 360°
-  // straight back onto 0°, so anything else leaves a seam there: a dead-straight
-  // radial line, which is precisely the edge this layer exists to avoid.
-  const rays = useMotionTemplate`conic-gradient(from 0deg, rgb(var(--reactor) / 0) 0deg, rgb(var(--reactor) / ${rayAlpha}) 34deg, rgb(var(--reactor) / 0) 74deg, rgb(var(--reactor) / ${rayAlpha}) 106deg, rgb(var(--reactor) / 0) 152deg, rgb(var(--reactor) / ${rayAlpha}) 187deg, rgb(var(--reactor) / 0) 219deg, rgb(var(--reactor) / ${rayAlpha}) 251deg, rgb(var(--reactor) / 0) 292deg, rgb(var(--reactor) / ${rayAlpha}) 322deg, rgb(var(--reactor) / 0) 360deg)`;
+  // The mask is what aims the rays. Opaque right where the core ends, already
+  // halved by mid-radius, gone before the edge — so every ray is brightest at
+  // the button and thins as it goes out, which the eye reads as pointing in.
+  const rayMask =
+    'radial-gradient(circle, transparent 17%, rgb(0 0 0 / 0.95) 25%, rgb(0 0 0 / 0.45) 48%, transparent 76%)';
 
-  const auraScale = useTransform(intensity, [0, 1], [0.88, 1.14]);
-
-  // One mask for the ray ring: transparent over the core, opaque through the
-  // middle, transparent again well before the element's edge.
-  const rayMask = 'radial-gradient(circle, transparent 16%, black 44%, transparent 82%)';
+  // Presses past the last written line fall back to a counted one.
+  const caption =
+    presses === 0
+      ? t('enterCaption')
+      : presses <= PRESS_LINES
+        ? t(`press.${presses}`)
+        : t('pressCount', { count: presses });
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -194,7 +203,7 @@ export function PHButton() {
           has to reach zero well before anything can clip it.
           Both track the viewport on narrow screens, and they have to track it
           together: at 390px a fixed 20rem aura is already wider than the block
-          it sits in, and the proximity scale then pushes it 14% past that. */}
+          it sits in, and the proximity scale then pushes it past that. */}
       <div
         ref={ref}
         className="relative grid h-[min(26rem,92vw)] w-[min(26rem,92vw)] place-items-center"
@@ -213,23 +222,27 @@ export function PHButton() {
           />
         </span>
 
-        {/* Rays. Masked into a ring, so they dissolve at both ends: they never
-            touch the core, and they never reach an edge to be cut off at. */}
-        <span
+        {/* Rays. The outer span carries the slow turn, the inner one the lean
+            toward the cursor — two transforms that would overwrite each other
+            on a single element. */}
+        <motion.span
           aria-hidden="true"
-          className={`pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)] ${
-            reduceMotion ? '' : 'animate-sun-turn'
-          }`}
+          style={{ x: rayShiftX, y: rayShiftY }}
+          className="pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)]"
         >
-          <motion.span
-            style={{
-              backgroundImage: rays,
-              maskImage: rayMask,
-              WebkitMaskImage: rayMask
-            }}
-            className="block h-full w-full rounded-full"
-          />
-        </span>
+          <span
+            className={`block h-full w-full ${reduceMotion ? '' : 'animate-sun-turn'}`}
+          >
+            <motion.span
+              style={{
+                backgroundImage: rays,
+                maskImage: rayMask,
+                WebkitMaskImage: rayMask
+              }}
+              className="block h-full w-full rounded-full"
+            />
+          </span>
+        </motion.span>
 
         {/* The core. Fixed dead centre, and the only red in the palette.
             Deliberately borderless: an outline here was drawing a hard ring at
@@ -239,15 +252,18 @@ export function PHButton() {
           type="button"
           onPointerEnter={() => hover.set(1)}
           onPointerLeave={() => hover.set(0)}
-          onClick={() => console.log('hub coming soon')}
+          onClick={() => setPresses((n) => n + 1)}
           aria-label={t('enterCaption')}
-          className="relative grid h-28 w-28 cursor-pointer place-items-center rounded-full bg-reactor text-white"
+          className="relative grid h-28 w-28 cursor-pointer place-items-center rounded-full bg-reactor text-white transition-transform duration-150 active:scale-95"
         >
           <span className="text-2xl font-bold tracking-[0.08em]">{t('enter')}</span>
         </button>
       </div>
 
-      <span className="ps-label">{t('enterCaption')}</span>
+      {/* The caption is the whole payoff of pressing, so it announces itself. */}
+      <span key={caption} className="ps-label animate-rise-in text-center">
+        {caption}
+      </span>
     </div>
   );
 }

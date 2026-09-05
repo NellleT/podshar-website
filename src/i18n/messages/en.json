@@ -10,23 +10,34 @@
     "evening": "Good evening"
   },
   "home": {
-    "today": "Today",
+    "today": "what day is it",
     "enter": "ПХ",
     "enterCaption": "Do not press",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "language": "Language",
-    "greetingLabel": "Welcome",
-    "memberLabel": "Member"
+    "greetingLabel": "hey",
+    "memberLabel": "who is this",
+    "quoteLabel": "thought of the day",
+    "pressCount": "{count} presses. still nothing",
+    "press": {
+      "1": "really?",
+      "2": "one more and it breaks",
+      "3": "i did warn you",
+      "4": "you are not going to stop, are you",
+      "5": "fine. keep going",
+      "6": "the button is tired. you are not"
+    }
   },
   "sidebar": {
-    "profile": "Profile",
-    "stats": "Live stats",
+    "profile": "that's you",
+    "stats": "numbers",
     "dotaPts": "Dota 2 PTS",
     "brawlCups": "Brawl Stars cups",
     "navigation": "Navigation",
     "signOut": "Sign out",
-    "editProfile": "Edit"
+    "editProfile": "Edit",
+    "navHeading": "somewhere"
   },
   "nav": {
     "wip": "In progress",
@@ -50,7 +61,7 @@
   },
   "assistant": {
     "name": "Podshar",
-    "role": "Navigator",
+    "role": "pug navigator",
     "open": "Open assistant",
     "close": "Close assistant",
     "placeholder": "Ask me, or say where you want to go",
@@ -58,5 +69,15 @@
     "intro": "I know every corner of this place. Tell me where you want to go.",
     "offline": "Not connected yet. Try naming a section.",
     "avatarAlt": "Podshar AI assistant"
+  },
+  "quotes": {
+    "0": "if it works, don't touch it. if it doesn't, also don't",
+    "1": "i'm not procrastinating, i'm letting it marinate",
+    "2": "got up at six. went to bed at six",
+    "3": "plans for today: existed",
+    "4": "everything is under control. the control is not mine",
+    "5": "i'm fine. unspecified which kind of fine",
+    "6": "productive day: laptop opened",
+    "7": "we're not in a crisis, we're in beta"
   }
 }

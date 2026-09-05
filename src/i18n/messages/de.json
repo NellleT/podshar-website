@@ -10,23 +10,34 @@
     "evening": "Guten Abend"
   },
   "home": {
-    "today": "Heute",
+    "today": "welcher tag ist heute",
     "enter": "ПХ",
     "enterCaption": "Nicht drücken",
     "openMenu": "Menü öffnen",
     "closeMenu": "Menü schliessen",
     "language": "Sprache",
-    "greetingLabel": "Willkommen",
-    "memberLabel": "Mitglied"
+    "greetingLabel": "na dann",
+    "memberLabel": "wer ist das",
+    "quoteLabel": "gedanke des tages",
+    "pressCount": "{count} mal gedrückt. immer noch nichts",
+    "press": {
+      "1": "ernsthaft?",
+      "2": "noch einmal und es geht kaputt",
+      "3": "ich hab gewarnt",
+      "4": "du hörst nicht auf, oder?",
+      "5": "okay, mach ruhig weiter",
+      "6": "der knopf ist müde. du nicht"
+    }
   },
   "sidebar": {
-    "profile": "Profil",
-    "stats": "Live-Statistiken",
+    "profile": "das bist du",
+    "stats": "zahlen",
     "dotaPts": "Dota 2 PTS",
     "brawlCups": "Brawl-Stars-Pokale",
     "navigation": "Navigation",
     "signOut": "Abmelden",
-    "editProfile": "Bearbeiten"
+    "editProfile": "Bearbeiten",
+    "navHeading": "irgendwohin"
   },
   "nav": {
     "wip": "In Arbeit",
@@ -50,7 +61,7 @@
   },
   "assistant": {
     "name": "Podshar",
-    "role": "Navigator",
+    "role": "mops-navigator",
     "open": "Assistent öffnen",
     "close": "Assistent schliessen",
     "placeholder": "Frag mich, oder sag, wohin du willst",
@@ -58,5 +69,15 @@
     "intro": "Ich kenne hier jede Ecke. Sag mir, wohin du willst.",
     "offline": "Noch keine Verbindung. Nenn einen Bereich.",
     "avatarAlt": "Podshar KI-Assistent"
+  },
+  "quotes": {
+    "0": "läuft — nicht anfassen. läuft nicht — auch nicht",
+    "1": "ich prokrastiniere nicht, ich lasse es ziehen",
+    "2": "um sechs aufgestanden. um sechs ins bett",
+    "3": "pläne für heute: gab es",
+    "4": "alles unter kontrolle. die kontrolle ist nicht meine",
+    "5": "mir geht's gut. welche art gut, unklar",
+    "6": "produktiver tag: laptop aufgeklappt",
+    "7": "wir sind nicht in der krise, wir sind in der beta"
   }
 }

@@ -90,9 +90,14 @@
     @apply rounded-block border-2 border-rule bg-surface;
   }
 
-  /* Uppercase micro-label used for every section header and stat caption. */
+  /* The micro-label above every section and stat.
+
+     Lower case, not upper. Caps plus letter-spacing is the house style of
+     galleries and annual reports, and it was quietly making a private joke
+     site for three people read like a brochure. The same words set in
+     lower case say the same thing without the posture. */
   .ps-label {
-    @apply text-label font-semibold uppercase text-ink-muted;
+    @apply text-label font-semibold lowercase text-ink-muted;
   }
 
   /* Divider between sections inside one panel. */

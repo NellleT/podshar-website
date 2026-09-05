@@ -117,7 +117,7 @@ export function LeftSidebar({
               they say so rather than pretending to be links — see
               PRIMARY_NAV_SLOTS in src/lib/navigation.ts. */}
           <nav className="border-t border-rule-soft px-5 pb-6 pt-8">
-            <p className="ps-label mb-4">{t('navigation')}</p>
+            <p className="ps-label mb-4">{t('navHeading')}</p>
             <ul className="space-y-2">
               {Array.from({ length: PRIMARY_NAV_SLOTS }, (_, i) => (
                 <li key={i}>
@@ -147,7 +147,7 @@ export function LeftSidebar({
 function StatBlock({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="rounded border-2 border-rule bg-canvas p-3">
-      <dt className="text-[0.7rem] uppercase leading-tight tracking-label text-ink-muted">
+      <dt className="text-[0.7rem] lowercase leading-tight tracking-label text-ink-muted">
         {label}
       </dt>
       <dd className="mt-2 text-2xl font-semibold tabular-nums text-ink">
