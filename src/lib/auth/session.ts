@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { cache } from 'react';
 
 import { prisma } from '@/lib/db';
+import { SESSION_COOKIE } from '@/lib/auth/cookie';
 
 /**
  * Sessions.
@@ -23,7 +24,6 @@ import { prisma } from '@/lib/db';
  * since the token is uniformly random there is nothing to salt against — a
  * rainbow table over 2^256 is not a thing.
  */
-export const SESSION_COOKIE = 'podshar_session';
 const TTL_DAYS = 30;
 
 const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');

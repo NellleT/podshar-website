@@ -81,5 +81,29 @@
     "5": "i'm fine. unspecified which kind of fine",
     "6": "productive day: laptop opened",
     "7": "we're not in a crisis, we're in beta"
+  },
+  "auth": {
+    "loginTitle": "who goes there",
+    "loginHint": "three people have keys. presumably you are one of them.",
+    "identifier": "handle or email",
+    "password": "password",
+    "signIn": "let me in",
+    "joinTitle": "first time",
+    "joinHint": "your handle and email come with the invite. pick a name and a password.",
+    "displayName": "what to call you",
+    "confirmPassword": "password again",
+    "createAccount": "create the account",
+    "noToken": "this page needs an invite link. ask whoever has the tokens.",
+    "working": "one moment",
+    "signOut": "sign out",
+    "errors": {
+      "invalid": "something in that form is wrong.",
+      "badCredentials": "wrong handle or password.",
+      "tooMany": "too many attempts. wait ten minutes.",
+      "badToken": "that invite is unknown, expired or already used.",
+      "mismatch": "the two passwords are different.",
+      "tooShort": "at least 10 characters, please.",
+      "nameTooShort": "a name of at least two characters."
+    }
   }
 }

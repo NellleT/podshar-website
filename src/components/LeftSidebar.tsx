@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { PRIMARY_NAV_SLOTS } from '@/lib/navigation';
 import { PodsharWordmark } from './PodsharMark';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { SignOutButton } from './auth/SignOutButton';
 import type { MemberProfile, QuickStats } from '@/lib/types';
 
 /**
@@ -135,9 +136,7 @@ export function LeftSidebar({
 
         <footer className="flex items-center justify-between border-t border-rule-soft px-5 py-3">
           <LocaleSwitcher />
-          <button type="button" className="ps-label transition-colors hover:text-ink">
-            {t('signOut')}
-          </button>
+          <SignOutButton />
         </footer>
       </div>
     </aside>

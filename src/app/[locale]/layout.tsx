@@ -4,8 +4,6 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import { Manrope } from 'next/font/google';
 
 import { routing } from '@/i18n/routing';
-import { AppShell } from '@/components/AppShell';
-import { getCurrentMember, getQuickStats } from '@/lib/session';
 import { resolveLocale } from '@/lib/locale';
 import '../globals.css';
 
@@ -71,22 +69,16 @@ export default async function LocaleLayout({
 }) {
   // Validates the segment and opts this subtree into static rendering.
   const locale = resolveLocale((await params).locale);
+  const messages = await getMessages();
 
-  const [messages, profile, stats] = await Promise.all([
-    getMessages(),
-    getCurrentMember(),
-    getQuickStats()
-  ]);
-
+  // The document and the translations, and nothing else. The application
+  // chrome — drawer, assistant, canvas — belongs to the (app) group, because
+  // the login and join screens under (auth) must render without it: a sidebar
+  // full of someone's stats has no business being on a signed-out page.
   return (
     <html lang={locale} className={sans.variable}>
       <body className="bg-canvas font-sans text-ink antialiased">
-        <NextIntlClientProvider messages={messages}>
-          {/* AppShell owns the drawer push and the canvas. */}
-          <AppShell profile={profile} stats={stats}>
-            {children}
-          </AppShell>
-        </NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
       </body>
     </html>
   );

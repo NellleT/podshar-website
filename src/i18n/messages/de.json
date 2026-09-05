@@ -81,5 +81,29 @@
     "5": "mir geht's gut. welche art gut, unklar",
     "6": "produktiver tag: laptop aufgeklappt",
     "7": "wir sind nicht in der krise, wir sind in der beta"
+  },
+  "auth": {
+    "loginTitle": "wer da",
+    "loginHint": "drei leute haben schlüssel. vermutlich bist du einer davon.",
+    "identifier": "handle oder e-mail",
+    "password": "passwort",
+    "signIn": "lass mich rein",
+    "joinTitle": "das erste mal",
+    "joinHint": "handle und e-mail kommen mit der einladung. wähl einen namen und ein passwort.",
+    "displayName": "wie man dich nennt",
+    "confirmPassword": "passwort nochmal",
+    "createAccount": "konto erstellen",
+    "noToken": "diese seite braucht einen einladungslink. frag die person mit den tokens.",
+    "working": "moment",
+    "signOut": "abmelden",
+    "errors": {
+      "invalid": "irgendwas im formular stimmt nicht.",
+      "badCredentials": "falsches handle oder passwort.",
+      "tooMany": "zu viele versuche. warte zehn minuten.",
+      "badToken": "diese einladung ist unbekannt, abgelaufen oder schon benutzt.",
+      "mismatch": "die passwörter sind unterschiedlich.",
+      "tooShort": "mindestens 10 zeichen, bitte.",
+      "nameTooShort": "ein name mit mindestens zwei zeichen."
+    }
   }
 }
