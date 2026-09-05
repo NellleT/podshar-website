@@ -27,7 +27,14 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // The pooled endpoint for the app: Neon puts PgBouncer in front, which is
+  // what keeps serverless-style connection churn from exhausting Postgres.
+  url       = env("DATABASE_URL")
+  // Migrations must not go through the pooler. DDL needs a real session
+  // (advisory locks, prepared statements), and PgBouncer in transaction mode
+  // does not give it one — `prisma migrate` hangs or errors against a pooled
+  // URL. `neon link` writes both, so both are already in .env.local.
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ---------------------------------------------------------------------------
