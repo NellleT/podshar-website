@@ -44,7 +44,12 @@ export function AssistantAvatar({ className = 'h-11 w-11' }: { className?: strin
             if (el?.complete && el.naturalWidth === 0) setFailed(true);
           }}
           onError={() => setFailed(true)}
-          className="h-full w-full object-cover object-center"
+          // An <img> is natively draggable. Left on, a press-and-move over the
+          // launcher starts the browser's own image drag-and-drop, which takes
+          // the pointer capture and cancels every pointermove after the first —
+          // so the launcher simply refuses to move. This is that fix.
+          draggable={false}
+          className="h-full w-full select-none object-cover object-center"
         />
       )}
     </span>

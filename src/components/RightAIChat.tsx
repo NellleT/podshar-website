@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { AssistantAvatar } from './AssistantAvatar';
+import { AssistantLauncher } from './AssistantLauncher';
 
 type Message = { id: string; role: 'assistant' | 'user'; text: string };
 
@@ -60,19 +61,9 @@ export function RightAIChat() {
         <ChatBody onClose={() => setOpen(false)} />
       </aside>
 
-      {/* The launcher. The photo is the button — no colour laid over it, and
-          the only reaction is a hair of scale. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t('open')}
-        aria-expanded={open}
-        className={`fixed bottom-5 right-5 z-50 rounded-full transition-all duration-drape ease-drape hover:scale-[1.04] active:scale-100 ${
-          open ? 'pointer-events-none scale-90 opacity-0' : 'scale-100 opacity-100'
-        }`}
-      >
-        <AssistantAvatar className="h-14 w-14" />
-      </button>
+      {/* The launcher owns its own position, collapse state and drag. This
+          component only says whether the panel is up. */}
+      <AssistantLauncher hidden={open} onOpen={() => setOpen(true)} />
     </>
   );
 }

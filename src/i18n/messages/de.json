@@ -68,7 +68,9 @@
     "send": "Senden",
     "intro": "Ich kenne hier jede Ecke. Sag mir, wohin du willst.",
     "offline": "Noch keine Verbindung. Nenn einen Bereich.",
-    "avatarAlt": "Podshar KI-Assistent"
+    "avatarAlt": "Podshar KI-Assistent",
+    "collapse": "Assistent einklappen",
+    "expand": "Assistent ausklappen"
   },
   "quotes": {
     "0": "läuft — nicht anfassen. läuft nicht — auch nicht",

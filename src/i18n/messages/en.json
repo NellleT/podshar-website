@@ -68,7 +68,9 @@
     "send": "Send",
     "intro": "I know every corner of this place. Tell me where you want to go.",
     "offline": "Not connected yet. Try naming a section.",
-    "avatarAlt": "Podshar AI assistant"
+    "avatarAlt": "Podshar AI assistant",
+    "collapse": "Collapse assistant",
+    "expand": "Expand assistant"
   },
   "quotes": {
     "0": "if it works, don't touch it. if it doesn't, also don't",

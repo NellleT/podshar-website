@@ -7,7 +7,8 @@ import {
   useMotionTemplate,
   useSpring,
   useTransform,
-  useReducedMotion
+  useReducedMotion,
+  type MotionValue
 } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 
@@ -26,15 +27,54 @@ const RESTING = 0.16;
 const PRESS_LINES = 6;
 
 /**
- * Ray bearings, in degrees, and the half-width of each wedge.
+ * The rays, in three tiers.
  *
- * Twelve rays at spacings that are close to even but never actually even — 26°,
- * 28°, 30°, 34° — so the ring reads as hand-drawn rather than machined. None of
- * them come within `HALF` of 0° or 360°, which keeps the conic gradient's wrap
- * point inside a gap where nothing is being drawn.
+ * One tier of twelve evenly-lit rays under one mask gives every ray the same
+ * length, and twelve equal spikes around a circle is a cog, not a sun. Splitting
+ * them into long, medium and short — each with its own mask reach, its own blur
+ * and its own rotation speed — means no two rays end at the same radius and the
+ * three tiers drift out of phase forever. That drift is what stops the shape
+ * from ever settling into a polygon.
+ *
+ * Bearings inside a tier are spaced unevenly on purpose, and none comes within
+ * `RAY_HALF` of 0°/360°, which keeps the conic gradient's wrap point inside a
+ * gap where nothing is being drawn.
  */
-const RAY_ANGLES = [10, 36, 62, 90, 120, 148, 174, 205, 232, 260, 292, 326];
-const RAY_HALF = 6;
+const RAY_TIERS = [
+  {
+    angles: [14, 121, 208, 297],
+    half: 5,
+    // Reach: opaque as it leaves the fill, gone by the outer edge.
+    mask:
+      'radial-gradient(circle, transparent 13%, rgb(0 0 0 / 0.5) 19%, rgb(0 0 0 / 0.95) 33%, rgb(0 0 0 / 0.5) 62%, rgb(0 0 0 / 0.16) 80%, transparent 96%)',
+    blur: 6,
+    // Long rays carry more of the alpha: they are the ones read as rays at all,
+    // while the short tier is really just texture on the fill.
+    gain: 1.3,
+    spin: '71s',
+    reverse: false
+  },
+  {
+    angles: [47, 152, 239, 331],
+    half: 6.5,
+    mask:
+      'radial-gradient(circle, transparent 13%, rgb(0 0 0 / 0.6) 20%, rgb(0 0 0 / 0.9) 31%, rgb(0 0 0 / 0.4) 52%, transparent 74%)',
+    blur: 7,
+    gain: 1,
+    spin: '52s',
+    reverse: true
+  },
+  {
+    angles: [31, 78, 96, 178, 265, 312],
+    half: 8,
+    mask:
+      'radial-gradient(circle, transparent 12%, rgb(0 0 0 / 0.7) 18%, rgb(0 0 0 / 0.8) 26%, rgb(0 0 0 / 0.3) 41%, transparent 58%)',
+    blur: 9,
+    gain: 0.75,
+    spin: '96s',
+    reverse: false
+  }
+] as const;
 
 /**
  * Two decimals, always.
@@ -47,20 +87,44 @@ const RAY_HALF = 6;
 const fixed = (n: number) => n.toFixed(2);
 
 /**
- * The conic gradient for the rays, built from RAY_ANGLES.
+ * The angular profile of one ray, as fractions of RAY_HALF and of full alpha.
  *
- * Each ray is three stops — transparent, alpha, transparent — so it is a spoke
- * that fades in and out along the sweep instead of a wedge with sides. Written
- * out by hand this was a 40-stop string nobody could read or safely edit; as a
- * function the geometry is the array at the top of the file.
+ * Three stops a side, not one. A ray built from `0 -> a -> 0` is a triangle:
+ * the alpha ramps linearly, so the eye reads two straight edges meeting at a
+ * point and the whole ring looks cut from paper. These weights approximate a
+ * raised cosine, which has no straight segment anywhere and no corner at the
+ * tip — the shape a light actually makes.
  */
-function buildRays(alpha: number): string {
+const RAY_PROFILE = [
+  [1, 0],
+  [0.72, 0.12],
+  [0.42, 0.46],
+  [0, 1]
+] as const;
+
+/**
+ * The conic gradient for one tier of rays.
+ *
+ * Written out by hand this was a 40-stop string nobody could read or safely
+ * edit; as a function the geometry is the tables at the top of the file.
+ */
+function buildRays(
+  angles: readonly number[],
+  half: number,
+  alpha: number
+): string {
   const red = (a: number) => `rgb(var(--reactor) / ${fixed(a)})`;
   const stops = [`${red(0)} 0deg`];
-  for (const angle of RAY_ANGLES) {
-    stops.push(`${red(0)} ${angle - RAY_HALF}deg`);
-    stops.push(`${red(alpha)} ${angle}deg`);
-    stops.push(`${red(0)} ${angle + RAY_HALF}deg`);
+  for (const angle of angles) {
+    // Leading flank, peak, trailing flank — the profile mirrored about `angle`.
+    for (let i = RAY_PROFILE.length - 1; i >= 0; i--) {
+      const [offset, weight] = RAY_PROFILE[i];
+      stops.push(`${red(alpha * weight)} ${fixed(angle - offset * half)}deg`);
+    }
+    for (let i = 1; i < RAY_PROFILE.length; i++) {
+      const [offset, weight] = RAY_PROFILE[i];
+      stops.push(`${red(alpha * weight)} ${fixed(angle + offset * half)}deg`);
+    }
   }
   stops.push(`${red(0)} 360deg`);
   return `conic-gradient(from 0deg, ${stops.join(', ')})`;
@@ -176,18 +240,16 @@ export function PHButton() {
   // which is a lot of red on a near-white page; the rays carry the effect now,
   // so the fill only has to bridge the gap between the core and them.
   const hot = useTransform(intensity, (i) => fixed(0.16 + 0.26 * i));
-  const mid = useTransform(intensity, (i) => fixed(0.06 + 0.14 * i));
+  const mid = useTransform(intensity, (i) => fixed(0.07 + 0.16 * i));
+  const far = useTransform(intensity, (i) => fixed(0.03 + 0.07 * i));
   const rayAlpha = useTransform(intensity, (i) => 0.13 + 0.3 * i);
 
-  const aura = useMotionTemplate`radial-gradient(circle at ${gx}% ${gy}%, rgb(var(--reactor) / ${hot}) 0%, rgb(var(--reactor) / ${hot}) 18%, rgb(var(--reactor) / ${mid}) 34%, rgb(var(--reactor) / 0) 58%)`;
-  const rays = useTransform(rayAlpha, buildRays);
+  // Four stops so the fill has a long tail. The tail is the point: it has to
+  // still be carrying colour out at 60-70% of the radius, because that is where
+  // the rays live. When the fill died at 58% the rays began in bare space and
+  // read as a separate ring hovering around the button.
+  const aura = useMotionTemplate`radial-gradient(circle at ${gx}% ${gy}%, rgb(var(--reactor) / ${hot}) 0%, rgb(var(--reactor) / ${hot}) 18%, rgb(var(--reactor) / ${mid}) 36%, rgb(var(--reactor) / ${far}) 58%, rgb(var(--reactor) / 0) 84%)`;
   const auraScale = useTransform(intensity, [0, 1], [0.9, 1.08]);
-
-  // The mask is what aims the rays. Opaque right where the core ends, already
-  // halved by mid-radius, gone before the edge — so every ray is brightest at
-  // the button and thins as it goes out, which the eye reads as pointing in.
-  const rayMask =
-    'radial-gradient(circle, transparent 17%, rgb(0 0 0 / 0.95) 25%, rgb(0 0 0 / 0.45) 48%, transparent 76%)';
 
   // Presses past the last written line fall back to a counted one.
   const caption =
@@ -222,27 +284,17 @@ export function PHButton() {
           />
         </span>
 
-        {/* Rays. The outer span carries the slow turn, the inner one the lean
-            toward the cursor — two transforms that would overwrite each other
-            on a single element. */}
-        <motion.span
-          aria-hidden="true"
-          style={{ x: rayShiftX, y: rayShiftY }}
-          className="pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)]"
-        >
-          <span
-            className={`block h-full w-full ${reduceMotion ? '' : 'animate-sun-turn'}`}
-          >
-            <motion.span
-              style={{
-                backgroundImage: rays,
-                maskImage: rayMask,
-                WebkitMaskImage: rayMask
-              }}
-              className="block h-full w-full rounded-full"
-            />
-          </span>
-        </motion.span>
+        {/* Rays, in three tiers of different reach and speed. */}
+        {RAY_TIERS.map((tier) => (
+          <RayTier
+            key={tier.spin}
+            tier={tier}
+            alpha={rayAlpha}
+            shiftX={rayShiftX}
+            shiftY={rayShiftY}
+            still={Boolean(reduceMotion)}
+          />
+        ))}
 
         {/* The core. Fixed dead centre, and the only red in the palette.
             Deliberately borderless: an outline here was drawing a hard ring at
@@ -254,7 +306,18 @@ export function PHButton() {
           onPointerLeave={() => hover.set(0)}
           onClick={() => setPresses((n) => n + 1)}
           aria-label={t('enterCaption')}
-          className="relative grid h-28 w-28 cursor-pointer place-items-center rounded-full bg-reactor text-white transition-transform duration-150 active:scale-95"
+          style={{
+            // Lit from above rather than filled flat: the top is a touch
+            // lighter, the bottom a touch deeper. Two percent of lightness, and
+            // the difference between a sticker and a lamp.
+            backgroundImage:
+              'radial-gradient(circle at 50% 34%, rgb(232 96 90) 0%, rgb(var(--reactor)) 52%, rgb(196 44 39) 100%)',
+            // The rim is where "jagged" lived: a solid circle against a soft
+            // glow ends on one hard pixel. This spreads the last few pixels of
+            // the core outward into the aura so the edge has nowhere to land.
+            boxShadow: '0 0 22px 6px rgb(var(--reactor) / 0.34)'
+          }}
+          className="relative grid h-28 w-28 cursor-pointer place-items-center rounded-full text-white transition-transform duration-150 active:scale-95"
         >
           <span className="text-2xl font-bold tracking-[0.08em]">{t('enter')}</span>
         </button>
@@ -265,5 +328,66 @@ export function PHButton() {
         {caption}
       </span>
     </div>
+  );
+}
+
+/**
+ * One tier of rays: a conic gradient, masked to a reach and blurred.
+ *
+ * Three nested elements because three transforms have to compose and CSS only
+ * gives an element one `transform`: the outer one leans toward the cursor, the
+ * middle one turns, the inner one carries the paint.
+ */
+function RayTier({
+  tier,
+  alpha,
+  shiftX,
+  shiftY,
+  still
+}: {
+  tier: (typeof RAY_TIERS)[number];
+  alpha: MotionValue<number>;
+  shiftX: MotionValue<number>;
+  shiftY: MotionValue<number>;
+  still: boolean;
+}) {
+  const image = useTransform(alpha, (a) =>
+    buildRays(tier.angles, tier.half, a * tier.gain)
+  );
+
+  return (
+    <motion.span
+      aria-hidden="true"
+      style={{ x: shiftX, y: shiftY }}
+      className="pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)]"
+    >
+      <span
+        className={`block h-full w-full ${still ? '' : 'animate-sun-turn'}`}
+        style={
+          still
+            ? undefined
+            : {
+                animationDuration: tier.spin,
+                animationDirection: tier.reverse ? 'reverse' : 'normal'
+              }
+        }
+      >
+        <motion.span
+          style={{
+            backgroundImage: image,
+            maskImage: tier.mask,
+            WebkitMaskImage: tier.mask,
+            // A conic gradient is drawn by sampling angles, so at low alpha it
+            // bands into visible facets that no number of extra stops fixes. A
+            // small blur dissolves the facets and rounds the tips at the same
+            // time. Each tier is one composited layer that only ever rotates,
+            // so the browser blurs it once and reuses the raster.
+            filter: `blur(${tier.blur}px)`,
+            willChange: 'transform'
+          }}
+          className="block h-full w-full rounded-full"
+        />
+      </span>
+    </motion.span>
   );
 }

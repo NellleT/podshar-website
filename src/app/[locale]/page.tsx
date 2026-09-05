@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { Greeting } from '@/components/Greeting';
+import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
 import { getCurrentMember } from '@/lib/session';
 import { resolveLocale } from '@/lib/locale';
@@ -67,16 +68,23 @@ export default async function HomePage({
         <PHButton />
       </section>
 
-      {/* The date */}
+      {/* The date, and your own clock beside it.
+
+          The two are not the same kind of fact. The date is shared — it is
+          rendered on the server in Zurich time so all three of us see the same
+          day. The clock is yours, resolved in your browser, in your zone. */}
       <section className="block-card animate-rise-in flex flex-col gap-4 p-6 [animation-delay:120ms] md:col-span-2">
         <p className="ps-label">{t('today')}</p>
-        <div>
-          <p className="text-3xl font-semibold leading-tight text-ink">
-            {fmt({ day: '2-digit', month: 'long' })}
-          </p>
-          <p className="mt-1 text-base font-medium capitalize text-ink-muted">
-            {fmt({ weekday: 'long' })} &middot; {fmt({ year: 'numeric' })}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+          <div>
+            <p className="text-3xl font-semibold leading-tight text-ink">
+              {fmt({ day: '2-digit', month: 'long' })}
+            </p>
+            <p className="mt-1 text-base font-medium capitalize text-ink-muted">
+              {fmt({ weekday: 'long' })} &middot; {fmt({ year: 'numeric' })}
+            </p>
+          </div>
+          <LocalClock />
         </div>
       </section>
 
