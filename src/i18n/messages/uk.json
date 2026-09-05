@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "title": "Подшар",
+    "description": "Приватний хаб на трьох."
+  },
+  "greeting": {
+    "night": "Доброї ночі",
+    "morning": "Доброго ранку",
+    "afternoon": "Доброго дня",
+    "evening": "Доброго вечора"
+  },
+  "home": {
+    "today": "Сьогодні",
+    "enter": "ПХ",
+    "enterCaption": "Не натискати",
+    "openMenu": "Відкрити меню",
+    "closeMenu": "Закрити меню",
+    "language": "Мова",
+    "greetingLabel": "Ласкаво просимо",
+    "memberLabel": "Учасник"
+  },
+  "sidebar": {
+    "profile": "Профіль",
+    "stats": "Статистика",
+    "dotaPts": "Dota 2 PTS",
+    "brawlCups": "Кубки Brawl Stars",
+    "navigation": "Навігація",
+    "signOut": "Вийти",
+    "editProfile": "Редагувати"
+  },
+  "nav": {
+    "wip": "В розробці",
+    "daily": "Щоденне",
+    "culture": "Культура",
+    "world": "Світ",
+    "play": "Грати",
+    "calendar": "Календар",
+    "todos": "Завдання",
+    "gym": "Зал",
+    "wallOfShame": "Стіна ганьби",
+    "memes": "Стрічка мемів",
+    "gallery": "Галерея",
+    "radar": "Мода і парфуми",
+    "music": "Музика",
+    "ballick": "Ballick",
+    "traphouse": "Треп-хаус",
+    "geopolitics": "Карта",
+    "games": "Ігри",
+    "gameStats": "Ігрова статистика"
+  },
+  "assistant": {
+    "name": "Подшар",
+    "role": "Навігатор",
+    "open": "Відкрити асистента",
+    "close": "Закрити асистента",
+    "placeholder": "Запитай або скажи, куди йти",
+    "send": "Надіслати",
+    "intro": "Я знаю тут кожен закуток. Скажи, куди ти хочеш потрапити.",
+    "offline": "Поки немає зв’язку. Назви розділ.",
+    "avatarAlt": "ШІ-асистент Подшар"
+  }
+}

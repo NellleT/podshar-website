@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "title": "Подшар",
+    "description": "Приватный хаб на троих."
+  },
+  "greeting": {
+    "night": "Доброй ночи",
+    "morning": "Доброе утро",
+    "afternoon": "Добрый день",
+    "evening": "Добрый вечер"
+  },
+  "home": {
+    "today": "Сегодня",
+    "enter": "ПХ",
+    "enterCaption": "Не нажимать",
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
+    "language": "Язык",
+    "greetingLabel": "Добро пожаловать",
+    "memberLabel": "Участник"
+  },
+  "sidebar": {
+    "profile": "Профиль",
+    "stats": "Статистика",
+    "dotaPts": "Dota 2 PTS",
+    "brawlCups": "Кубки Brawl Stars",
+    "navigation": "Навигация",
+    "signOut": "Выйти",
+    "editProfile": "Изменить"
+  },
+  "nav": {
+    "wip": "В разработке",
+    "daily": "Ежедневное",
+    "culture": "Культура",
+    "world": "Мир",
+    "play": "Играть",
+    "calendar": "Календарь",
+    "todos": "Задачи",
+    "gym": "Зал",
+    "wallOfShame": "Стена позора",
+    "memes": "Лента мемов",
+    "gallery": "Галерея",
+    "radar": "Мода и парфюм",
+    "music": "Музыка",
+    "ballick": "Ballick",
+    "traphouse": "Трэп-хаус",
+    "geopolitics": "Карта",
+    "games": "Игры",
+    "gameStats": "Игровая статистика"
+  },
+  "assistant": {
+    "name": "Подшар",
+    "role": "Навигатор",
+    "open": "Открыть ассистента",
+    "close": "Закрыть ассистента",
+    "placeholder": "Спроси или скажи, куда идти",
+    "send": "Отправить",
+    "intro": "Я знаю здесь каждый угол. Скажи, куда ты хочешь попасть.",
+    "offline": "Пока нет связи. Назови раздел.",
+    "avatarAlt": "ИИ-ассистент Подшар"
+  }
+}

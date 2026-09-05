@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * PALETTE
+ * =======
+ * Two options ship live. Both are defined here; one is active at a time.
+ *
+ *   Graphite (default) — cool near-white ground, near-black graphite text,
+ *                        one restrained blue for interactive states.
+ *   Paper              — the same system, warmed: bone-white ground, brown-black
+ *                        text, a muted green accent.
+ *
+ * To switch: put `data-palette="paper"` on the <html> element in
+ * src/app/[locale]/layout.tsx. Nothing else changes — every component reads
+ * these variables through the Tailwind tokens, never a literal hex.
+ *
+ * Values are space-separated RGB channels, not hex, so Tailwind's alpha
+ * modifiers (`text-ink/60`, `border-ink/20`) keep working.
+ *
+ * `--reactor` is deliberately outside both palettes. It is a warning light, not
+ * a brand colour, and it must read as foreign wherever it appears.
+ */
+@layer base {
+  :root {
+    /* ---- Option A — "Graphite" (active) ---------------------------------- */
+    --canvas: 242 242 242; /* #f2f2f2  page ground */
+    --surface: 255 255 255; /* #ffffff  block fill */
+    --sunk: 234 234 234; /* #eaeaea  recessed block fill */
+    --ink: 31 31 31; /* #1f1f1f  text, borders */
+    --accent: 59 110 165; /* #3b6ea5  the one interactive colour */
+    --accent-ink: 255 255 255; /* text on accent */
+    /* Shared across palettes. */
+    --reactor: 217 58 52; /* #d93a34  the core, and nothing else */
+  }
+
+  /* ---- Option B — "Paper" ----------------------------------------------- */
+  :root[data-palette='paper'] {
+    --canvas: 245 244 240; /* #f5f4f0 */
+    --surface: 251 250 247; /* #fbfaf7 */
+    --sunk: 234 232 226; /* #eae8e2 */
+    --ink: 35 33 29; /* #23211d */
+    --accent: 78 122 94; /* #4e7a5e */
+    --accent-ink: 255 255 255;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--ink));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background-color: rgb(var(--accent));
+    color: rgb(var(--accent-ink));
+  }
+
+  /* Keyboard focus only. A square outline, to match the blocks. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--ink));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* A block: a 2px outline, sharp corners, flat fill. The one surface
+     primitive in the system — every panel and card is this.
+
+     Two pixels, not one: with no shadows and almost no colour contrast between
+     surface and canvas, the outline is the only thing separating one block from
+     the next, and a hairline was leaving them to bleed together. Divisions
+     *inside* a block stay on `rule-soft` at 1px, so the hierarchy still reads:
+     thick means "different block", thin means "same block, next section". */
+  .block-card {
+    @apply rounded-block border-2 border-rule bg-surface;
+  }
+
+  /* Uppercase micro-label used for every section header and stat caption. */
+  .ps-label {
+    @apply text-label font-semibold uppercase text-ink-muted;
+  }
+
+  /* Divider between sections inside one panel. */
+  .ps-rule {
+    @apply border-t border-rule-soft;
+  }
+}
