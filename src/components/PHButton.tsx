@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  animate,
   motion,
   useMotionValue,
   useMotionTemplate,
@@ -25,6 +26,16 @@ const MAX_LEAN = 9;
 const RESTING = 0.16;
 /** How many presses have their own retort before the counter takes over. */
 const PRESS_LINES = 6;
+/**
+ * Rings per press, and how long one takes to cross the aura.
+ *
+ * Two rings, not one: a single expanding circle reads as a UI ripple, two
+ * staggered ones read as something that went off. The cap on how many can be in
+ * flight keeps a mashed button from stacking forty animating elements.
+ */
+const RINGS_PER_PRESS = 2;
+const RING_SECONDS = 1.15;
+const MAX_WAVES = 8;
 
 /**
  * Two decimals, always.
@@ -59,7 +70,10 @@ const fixed = (n: number) => n.toFixed(2);
  * `ReactorVines`. They are deliberately not derived from the fill — a gradient
  * cannot bend, and bending is the entire idea.
  *
- * The core and the label never move. Only the light does.
+ * The core and the label never move. Only the light does — and on a press it
+ * moves outward: two rings swell out of the core while a decaying `punch` value
+ * lifts the whole field, so the vines flex with the wave rather than watching
+ * it go past.
  *
  * Everything runs through motion values, so the gradients are rewritten on the
  * elements directly and React never re-renders during a mouse move. The press
@@ -73,6 +87,11 @@ export function PHButton() {
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const [presses, setPresses] = useState(0);
+  // Live shockwaves. The delay is stored per ring rather than derived from the
+  // array index: rings retire out of order, so an index-based delay would be
+  // recomputed for the survivors mid-flight and restart their animation.
+  const [waves, setWaves] = useState<{ id: number; delay: number }[]>([]);
+  const nextWave = useRef(0);
 
   // Pointer offset from the core's centre, in px. Seeded a full falloff away so
   // the reactor loads dormant — (0, 0) would read as a cursor sitting on it.
@@ -84,6 +103,10 @@ export function PHButton() {
   const dy = useSpring(rawY, { stiffness: 120, damping: 22, mass: 0.5 });
   // Hover lives in a motion value, not state: the core must not re-render.
   const hover = useSpring(0, { stiffness: 200, damping: 26 });
+  // The kick a press gives the light. Set to 1 on click and decayed back to 0,
+  // it rides on top of proximity — so the vines lengthen and brighten with the
+  // wave instead of the wave being a decal floating over a static field.
+  const punch = useMotionValue(0);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -119,10 +142,15 @@ export function PHButton() {
     return Math.max(linear * linear, h * 0.92);
   });
 
+  // What everything downstream actually reads: proximity plus the press kick.
+  const lit = useTransform<number, number>([intensity, punch], ([i, p]) =>
+    Math.min(1, i + p * 0.6)
+  );
+
   // Halo centre, in percent of the aura box. Clamped by MAX_LEAN, and damped at
   // distance so a far-off cursor does not drag a dim halo around.
   const bearing = useTransform<number, number>([dx, dy], ([x, y]) => Math.atan2(y, x));
-  const lean = useTransform(intensity, (i) => MAX_LEAN * (0.4 + 0.6 * i));
+  const lean = useTransform(lit, (i) => MAX_LEAN * (0.4 + 0.6 * i));
 
   const gx = useTransform<number, string>([bearing, lean], ([b, l]) =>
     fixed(50 + Math.cos(b) * l)
@@ -150,16 +178,32 @@ export function PHButton() {
   // Quiet numbers. The old fill peaked at 0.80 alpha across a 20rem circle,
   // which is a lot of red on a near-white page; the rays carry the effect now,
   // so the fill only has to bridge the gap between the core and them.
-  const hot = useTransform(intensity, (i) => fixed(0.14 + 0.2 * i));
-  const mid = useTransform(intensity, (i) => fixed(0.06 + 0.12 * i));
-  const far = useTransform(intensity, (i) => fixed(0.025 + 0.05 * i));
+  const hot = useTransform(lit, (i) => fixed(0.14 + 0.2 * i));
+  const mid = useTransform(lit, (i) => fixed(0.06 + 0.12 * i));
+  const far = useTransform(lit, (i) => fixed(0.025 + 0.05 * i));
 
   // Four stops so the fill has a long tail. The tail is the point: it has to
   // still be carrying colour out at 60-70% of the radius, because that is where
   // the rays live. When the fill died at 58% the rays began in bare space and
   // read as a separate ring hovering around the button.
   const aura = useMotionTemplate`radial-gradient(circle at ${gx}% ${gy}%, rgb(var(--reactor) / ${hot}) 0%, rgb(var(--reactor) / ${hot}) 18%, rgb(var(--reactor) / ${mid}) 36%, rgb(var(--reactor) / ${far}) 58%, rgb(var(--reactor) / 0) 84%)`;
-  const auraScale = useTransform(intensity, [0, 1], [0.9, 1.08]);
+  const auraScale = useTransform(lit, [0, 1], [0.9, 1.08]);
+
+  const press = () => {
+    setPresses((n) => n + 1);
+    if (reduceMotion) return;
+
+    // Keep only the tail: rings older than MAX_WAVES have long since faded, and
+    // holding their ids just leaks state on a button that invites mashing.
+    const rings = Array.from({ length: RINGS_PER_PRESS }, (_, i) => ({
+      id: nextWave.current++,
+      delay: i * 0.16
+    }));
+    setWaves((w) => [...w, ...rings].slice(-MAX_WAVES));
+
+    punch.set(1);
+    animate(punch, 0, { duration: 0.9, ease: 'easeOut' });
+  };
 
   // Presses past the last written line fall back to a counted one.
   const caption =
@@ -194,11 +238,40 @@ export function PHButton() {
           />
         </span>
 
+        {/* Shockwaves. Each is a soft ring that starts at the core's edge and
+            swells past the aura as it fades — the glow spreading outward rather
+            than a hard circle travelling. Rendered before the vines so the
+            vines stay on top of their own wave. */}
+        {waves.map((wave) => (
+          <motion.span
+            key={wave.id}
+            aria-hidden="true"
+            initial={{ scale: 0.3, opacity: 0.85 }}
+            animate={{ scale: 1.55, opacity: 0 }}
+            transition={{
+              duration: RING_SECONDS,
+              ease: [0.16, 1, 0.3, 1],
+              // The second ring of a press trails the first.
+              delay: wave.delay
+            }}
+            onAnimationComplete={() => setWaves((w) => w.filter((x) => x.id !== wave.id))}
+            style={{
+              // A band, not a disc: transparent through the middle so the ring
+              // is legible as a ring against the fill it is passing through.
+              // The inner shoulder is steeper than the outer one, which is how
+              // a wave actually looks — a front, and a wake behind it.
+              backgroundImage:
+                'radial-gradient(circle, rgb(var(--reactor) / 0) 47%, rgb(var(--reactor) / 0.62) 62%, rgb(var(--reactor) / 0.2) 71%, rgb(var(--reactor) / 0) 84%)'
+            }}
+            className="pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)] rounded-full"
+          />
+        ))}
+
         {/* The vines. Sized to the whole box, not the aura: they need room to
             reach past the glow toward wherever the pointer is. */}
         <ReactorVines
           bearing={bearing}
-          intensity={intensity}
+          intensity={lit}
           distance={distance}
           halfSize={halfSize}
           still={Boolean(reduceMotion)}
@@ -212,7 +285,7 @@ export function PHButton() {
           type="button"
           onPointerEnter={() => hover.set(1)}
           onPointerLeave={() => hover.set(0)}
-          onClick={() => setPresses((n) => n + 1)}
+          onClick={press}
           aria-label={t('enterCaption')}
           style={{
             // Lit from above rather than filled flat: the top is a touch
