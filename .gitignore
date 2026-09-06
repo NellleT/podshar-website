@@ -37,3 +37,8 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 .neon
+
+.vercel
+.env*
+# ...but the template carries no secrets and belongs in the repository.
+!.env.example

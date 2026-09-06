@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "ws": "tsx services/realtime/server.ts"
+    "ws": "tsx services/realtime/server.ts",
+    "deploy": "vercel deploy --prod"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
