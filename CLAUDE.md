@@ -76,14 +76,17 @@ argon2-хеша `DUMMY_HASH`. Иначе несуществующий хендл
 
 | | |
 |---|---|
-| Репозиторий | github.com/NellleT/podshar-website (владелец — друг) |
+| Репозиторий | github.com/trqwaa/podshar-website |
 | Хостинг | vercel.com/trqwaa/podshar-website → **podshar-website.vercel.app** |
 | База | Neon `small-unit-17442214` / production, eu-central-1 |
 | Секреты | `.env.local` (в gitignore), на Vercel — переменные проекта |
 
-**Автодеплой не подключён**: репозиторий принадлежит NellleT, Vercel-аккаунт —
-trqwaa, прав нет. После пуша нужно вручную `npm run deploy`. Чинится тем, что
-NellleT добавляет trqwaa в коллабораторы, затем `vercel git connect`.
+**Автодеплой работает**: пуш в `main` сам выкатывает прод. Так стало только
+после переноса репозитория на trqwaa — Vercel не даёт подключить репозиторий,
+принадлежащий чужому личному аккаунту, и коллабораторство этого не лечит:
+приложение Vercel ставится владельцем и видно только его же Vercel-аккаунту.
+
+`npm run deploy` остался на случай, когда нужно выкатить без коммита.
 
 ## Как проверять
 
