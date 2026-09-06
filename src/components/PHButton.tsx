@@ -29,13 +29,32 @@ const PRESS_LINES = 6;
 /**
  * Rings per press, and how long one takes to cross the aura.
  *
- * Two rings, not one: a single expanding circle reads as a UI ripple, two
- * staggered ones read as something that went off. The cap on how many can be in
- * flight keeps a mashed button from stacking forty animating elements.
+ * One ring. Two staggered ones read as a double thump, and a press is meant to
+ * be a single event now — the field is flung once and settles. The cap on how
+ * many can be in flight keeps a mashed button from stacking animating elements.
  */
-const RINGS_PER_PRESS = 2;
-const RING_SECONDS = 1.15;
+const RINGS_PER_PRESS = 1;
+const RING_SECONDS = 1.45;
 const MAX_WAVES = 8;
+/**
+ * One press, in seconds, and how much of that is the impulse.
+ *
+ * A press is one throw, not a pulsation: a fast shove, then a long decay while
+ * the vines swing back and settle. That asymmetry is the whole feel — momentum
+ * arrives all at once and leaves slowly. The vines, the aura, the ring and the
+ * core all run off these numbers so the four stay in step.
+ */
+const BURST_SECONDS = 1.35;
+const IMPULSE = 0.11;
+/**
+ * How far a shockwave ring swells, as a multiple of its own width.
+ *
+ * The ring is the outer edge of the explosion and the vines are capped just
+ * inside it, so this number sets how big a press looks. At 1.55 the blast was
+ * tidy but small; 1.75 puts the front at ~83 viewBox units, which is where
+ * ReactorVines' TIP_MAX is set to sit under.
+ */
+const RING_SCALE = 1.75;
 
 /**
  * Two decimals, always.
@@ -107,6 +126,22 @@ export function PHButton() {
   // it rides on top of proximity — so the vines lengthen and brighten with the
   // wave instead of the wave being a decal floating over a static field.
   const punch = useMotionValue(0);
+  // The core's own scale through a press. A motion value rather than a CSS
+  // transition so it can carry keyframes — two peaks, which `transition-
+  // transform` cannot express.
+  const core = useMotionValue(1);
+  // Bumped on every press. The vines watch it and roll a fresh set of random
+  // directions when it changes, so no two throws land the same way.
+  const seed = useMotionValue(0);
+  // Angular momentum, kept separate from the shove.
+  //
+  // `punch` is the wave arriving; this is the vines still moving afterwards. It
+  // decays over a longer window and dips below zero on the way back, so a vine
+  // swings a little past centre and settles instead of stopping dead where it
+  // started. One shared value rather than a spring per vine: seventeen springs
+  // would be seventeen more things updating every frame for a difference no one
+  // could see, since each vine already scales this by its own random kick.
+  const sway = useMotionValue(0);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -195,14 +230,48 @@ export function PHButton() {
 
     // Keep only the tail: rings older than MAX_WAVES have long since faded, and
     // holding their ids just leaks state on a button that invites mashing.
-    const rings = Array.from({ length: RINGS_PER_PRESS }, (_, i) => ({
+    const rings = Array.from({ length: RINGS_PER_PRESS }, () => ({
       id: nextWave.current++,
-      delay: i * 0.16
+      delay: 0
     }));
     setWaves((w) => [...w, ...rings].slice(-MAX_WAVES));
 
-    punch.set(1);
-    animate(punch, 0, { duration: 0.9, ease: 'easeOut' });
+    // Tell the vines to roll fresh directions before the throw reaches them.
+    seed.set(seed.get() + 1);
+
+    // One impulse: shove, then decay. The rise is short and the fall is the
+    // rest of the duration, so the vines are thrown and then coast back rather
+    // than being driven out and pulled in again. `easeOut` on both segments
+    // keeps the turn at the top soft — the old two-peak curve is what made
+    // this read as pulsation.
+    animate(punch, [0, 1, 0], {
+      duration: BURST_SECONDS,
+      times: [0, IMPULSE, 1],
+      ease: 'easeOut'
+    });
+
+    // The core goes with it, once. It starts under 1: that dip is the press,
+    // and it replaces the CSS `active:scale` the button used to carry — two
+    // things writing `transform` on one element means whichever loses the
+    // cascade is silently ignored.
+    animate(core, [0.95, 1.09, 1], {
+      duration: BURST_SECONDS * 0.7,
+      times: [0, 0.16, 1],
+      ease: 'easeOut'
+    });
+
+    // The swing outlives the shove and overshoots slightly on the way back —
+    // the small negative is a vine passing centre before it settles. Without
+    // it the return is the outward path played backwards, which is the thing
+    // that made the whole press look mechanical.
+    animate(sway, [0, 1, -0.14, 0], {
+      duration: BURST_SECONDS * 1.4,
+      // Peaks around 300ms against the shove's 150ms. The vine is pushed first
+      // and swings after, because that is the order it happens in — a swing
+      // that peaked with the shove was just the shove wearing a second name.
+      times: [0, 0.16, 0.66, 1],
+      ease: 'easeOut'
+    });
   };
 
   // Presses past the last written line fall back to a counted one.
@@ -246,8 +315,8 @@ export function PHButton() {
           <motion.span
             key={wave.id}
             aria-hidden="true"
-            initial={{ scale: 0.3, opacity: 0.85 }}
-            animate={{ scale: 1.55, opacity: 0 }}
+            initial={{ scale: 0.3, opacity: 0.5 }}
+            animate={{ scale: RING_SCALE, opacity: 0 }}
             transition={{
               duration: RING_SECONDS,
               ease: [0.16, 1, 0.3, 1],
@@ -261,7 +330,7 @@ export function PHButton() {
               // The inner shoulder is steeper than the outer one, which is how
               // a wave actually looks — a front, and a wake behind it.
               backgroundImage:
-                'radial-gradient(circle, rgb(var(--reactor) / 0) 47%, rgb(var(--reactor) / 0.62) 62%, rgb(var(--reactor) / 0.2) 71%, rgb(var(--reactor) / 0) 84%)'
+                'radial-gradient(circle, rgb(var(--reactor) / 0) 44%, rgb(var(--reactor) / 0.34) 62%, rgb(var(--reactor) / 0.14) 73%, rgb(var(--reactor) / 0) 88%)'
             }}
             className="pointer-events-none absolute h-[min(20rem,70vw)] w-[min(20rem,70vw)] rounded-full"
           />
@@ -275,6 +344,8 @@ export function PHButton() {
           distance={distance}
           halfSize={halfSize}
           burst={punch}
+          sway={sway}
+          seed={seed}
           still={Boolean(reduceMotion)}
         />
 
@@ -282,13 +353,14 @@ export function PHButton() {
             Deliberately borderless: an outline here was drawing a hard ring at
             exactly the seam the gradient is trying to hide, and cutting the
             object back into two. */}
-        <button
+        <motion.button
           type="button"
           onPointerEnter={() => hover.set(1)}
           onPointerLeave={() => hover.set(0)}
           onClick={press}
           aria-label={t('enterCaption')}
           style={{
+            scale: core,
             // Lit from above rather than filled flat: the top is a touch
             // lighter, the bottom a touch deeper. Two percent of lightness, and
             // the difference between a sticker and a lamp.
@@ -299,10 +371,10 @@ export function PHButton() {
             // the core outward into the aura so the edge has nowhere to land.
             boxShadow: '0 0 22px 6px rgb(var(--reactor) / 0.34)'
           }}
-          className="relative grid h-28 w-28 cursor-pointer place-items-center rounded-full text-white transition-transform duration-150 active:scale-95"
+          className="relative grid h-28 w-28 cursor-pointer place-items-center rounded-full text-white"
         >
           <span className="text-2xl font-bold tracking-[0.08em]">{t('enter')}</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* The caption is the whole payoff of pressing, so it announces itself. */}
