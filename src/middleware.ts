@@ -3,6 +3,7 @@ import createMiddleware from 'next-intl/middleware';
 
 import { routing } from './i18n/routing';
 import { SESSION_COOKIE } from './lib/auth/cookie';
+import { guestModeAllowed } from './lib/auth/config';
 
 const handleI18n = createMiddleware(routing);
 
@@ -33,8 +34,10 @@ export default function middleware(request: NextRequest) {
   // access on the request that follows.
   if (response.headers.get('location')) return response;
 
-  // Nothing to protect until there is a database to authenticate against.
-  if (!process.env.DATABASE_URL) return response;
+  // Only a local dev run without a database browses freely. A deploy that is
+  // missing DATABASE_URL keeps redirecting to /login: it is broken either way,
+  // and broken-and-shut beats broken-and-open on a private site.
+  if (guestModeAllowed()) return response;
 
   const { pathname } = request.nextUrl;
   // Strip the locale prefix: /ru/login -> /login

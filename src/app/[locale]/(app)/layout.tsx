@@ -1,6 +1,7 @@
 import { redirect } from '@/i18n/routing';
 import { AppShell } from '@/components/AppShell';
 import { readSession } from '@/lib/auth/session';
+import { guestModeAllowed } from '@/lib/auth/config';
 import { getCurrentMember, getQuickStats } from '@/lib/session';
 import { resolveLocale } from '@/lib/locale';
 
@@ -16,9 +17,9 @@ import { resolveLocale } from '@/lib/locale';
  * This is the gate: it asks the database whether the cookie names a live
  * session, and a forged or expired one gets no further than here.
  *
- * While `DATABASE_URL` is unset there is nothing to ask, so the site stays
- * open in guest mode rather than locking everyone out of a database that does
- * not exist yet.
+ * Guest mode — rendering this without a session — is a development-only
+ * convenience for running before the database exists. In production a missing
+ * `DATABASE_URL` shuts the door instead of opening it; see auth/config.ts.
  */
 export default async function AppLayout({
   children,
@@ -29,7 +30,7 @@ export default async function AppLayout({
 }) {
   const locale = resolveLocale((await params).locale);
 
-  if (process.env.DATABASE_URL) {
+  if (!guestModeAllowed()) {
     const session = await readSession();
     if (!session) redirect({ href: '/login', locale });
   }

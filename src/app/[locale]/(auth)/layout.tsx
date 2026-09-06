@@ -2,6 +2,7 @@ import { redirect } from '@/i18n/routing';
 import { PodsharWordmark } from '@/components/PodsharMark';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { readSession } from '@/lib/auth/session';
+import { authConfigured } from '@/lib/auth/config';
 import { resolveLocale } from '@/lib/locale';
 
 /**
@@ -23,7 +24,10 @@ export default async function AuthLayout({
 }) {
   const locale = resolveLocale((await params).locale);
 
-  if (process.env.DATABASE_URL) {
+  // Only ask when there is something to ask. Unlike the (app) side this one
+  // stays reachable without a database — it is the page a misconfigured deploy
+  // sends everyone to, and it should at least render.
+  if (authConfigured()) {
     const session = await readSession();
     if (session) redirect({ href: '/', locale });
   }

@@ -2,6 +2,7 @@ import 'server-only';
 
 import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth/session';
+import { authConfigured } from '@/lib/auth/config';
 import type { MemberProfile, QuickStats } from '@/lib/types';
 
 /**
@@ -10,11 +11,10 @@ import type { MemberProfile, QuickStats } from '@/lib/types';
  * These are the two seams the rest of the UI reads through, and they still are:
  * every caller above this file is unchanged from when both returned fixtures.
  *
- * Guest mode is deliberate and load-bearing. Until `DATABASE_URL` is set there
- * is no database to ask, and the site has to keep running anyway — it is a
- * public-facing shell that simply has nobody signed in. That is also the
- * honest state of a signed-out visitor once auth is switched on, so it is one
- * code path rather than a temporary scaffold.
+ * The guest values are what a signed-out visitor gets, and also what renders
+ * when there is no database configured at all. Note that this file does not
+ * decide who may *see* the page — the layouts do — it only answers "who is
+ * this", and "nobody" is a legitimate answer.
  */
 
 const GUEST: MemberProfile = {
@@ -23,12 +23,8 @@ const GUEST: MemberProfile = {
   avatarUrl: null
 };
 
-/** True once a database is configured. Cheap, and it avoids a connect attempt
- *  (and its multi-second timeout) on every render while the URL is missing. */
-const hasDatabase = () => Boolean(process.env.DATABASE_URL);
-
 export async function getCurrentMember(): Promise<MemberProfile> {
-  if (!hasDatabase()) return GUEST;
+  if (!authConfigured()) return GUEST;
 
   const session = await readSession();
   if (!session) return GUEST;
@@ -51,7 +47,7 @@ export async function getCurrentMember(): Promise<MemberProfile> {
  * for a signed-out visitor, who has no stats to show.
  */
 export async function getQuickStats(): Promise<QuickStats> {
-  if (!hasDatabase()) return { dotaPts: null, brawlCups: null };
+  if (!authConfigured()) return { dotaPts: null, brawlCups: null };
 
   const session = await readSession();
   if (!session) return { dotaPts: null, brawlCups: null };
