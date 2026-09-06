@@ -17,6 +17,13 @@ import type { MemberProfile, QuickStats } from '@/lib/types';
  * the width animates, and the inner wrapper is pinned to the full open width so
  * the text inside never reflows mid-animation.
  *
+ * It scrolls on its own. `sticky top-0` with `h-dvh` pins the drawer to the
+ * viewport while the canvas scrolls past it, and the region between the header
+ * and the footer takes its own `overflow-y-auto` — so a long nav list scrolls
+ * inside the drawer instead of dragging the drawer up the page with the
+ * greeting and the reactor. Sticky, not fixed, deliberately: a fixed panel
+ * leaves the flow, and leaving the flow is exactly what would break the push.
+ *
  * Order, top to bottom: who you are, then how you are doing, then where you can
  * go. The profile and the stats sit together as one unit at the top — they are
  * both answers to "me" — and navigation is pushed down past a deliberate gap.
@@ -58,7 +65,7 @@ export function LeftSidebar({
       // Collapsed content stays in the DOM, so without `inert` a keyboard user
       // tabs into rows that are clipped to zero width.
       inert={!open}
-      className={`shrink-0 overflow-hidden bg-surface transition-[width] duration-drape ease-drape ${
+      className={`sticky top-0 h-dvh shrink-0 self-start overflow-hidden bg-surface transition-[width] duration-drape ease-drape ${
         open ? 'w-sidebar border-r-2 border-rule lg:w-sidebar-lg' : 'w-0'
       }`}
     >
