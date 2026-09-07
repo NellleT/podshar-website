@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
+import { usePathname, useRouter } from '@/i18n/routing';
+import { placeForPath } from '@/lib/navigation';
 import { AssistantAvatar } from './AssistantAvatar';
 import { AssistantLauncher } from './AssistantLauncher';
 
@@ -70,18 +71,31 @@ export function RightAIChat() {
 
 function ChatBody({ onClose }: { onClose: () => void }) {
   const t = useTranslations('assistant');
+  const tGuide = useTranslations('guide');
   const locale = useLocale();
   const router = useRouter();
+  const pathname = usePathname();
 
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const logRef = useRef<HTMLDivElement | null>(null);
 
-  // Seed the intro in the active language, and reseed when the language changes.
+  // A guide opens by saying where you are standing, not with a menu. The
+  // fallback covers a page the map does not describe, which today cannot
+  // happen: the shell only wraps routes that exist, and the homepage is the
+  // only one of those.
+  const here = placeForPath(pathname);
+  const opening = here?.status === 'live' ? tGuide(`${here.id}.here`) : t('intro');
+
+  // Reseed whenever that line changes — a new language, or a new page. It also
+  // clears the log, which is the right trade while there is exactly one page to
+  // stand on. When the second one lands, this is the line to revisit: arriving
+  // somewhere should append the dog's remark, not erase the conversation that
+  // asked to go there.
   useEffect(() => {
-    setMessages([{ id: 'intro', role: 'assistant', text: t('intro') }]);
-  }, [t, locale]);
+    setMessages([{ id: 'intro', role: 'assistant', text: opening }]);
+  }, [opening]);
 
   // Keep the newest turn in view.
   useEffect(() => {
@@ -98,10 +112,23 @@ function ChatBody({ onClose }: { onClose: () => void }) {
     setBusy(true);
 
     try {
+      // `messages` is the log as it stood before this turn — the state update
+      // above has not landed in this closure — so it is exactly the history,
+      // with the text being sent carried separately. The opening line is left
+      // out: it is the dog describing the page, which the brief already says.
+      const history = messages
+        .filter((m) => m.id !== 'intro')
+        // Capped here as well as on the server. A long enough conversation would
+        // otherwise grow past what the endpoint accepts and start coming back as
+        // "no connection" — the one failure the fallback cannot cover, because
+        // the request never arrives.
+        .slice(-12)
+        .map((m) => ({ role: m.role, content: m.text }));
+
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ message: text, locale })
+        body: JSON.stringify({ message: text, locale, path: pathname, history })
       });
       if (!res.ok) throw new Error(`assistant responded ${res.status}`);
 

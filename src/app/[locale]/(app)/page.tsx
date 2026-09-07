@@ -4,6 +4,7 @@ import { Greeting } from '@/components/Greeting';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
 import { getCurrentMember } from '@/lib/session';
+import { sharedDayIndex } from '@/lib/day';
 import { resolveLocale } from '@/lib/locale';
 
 /** How many quotes each catalogue carries. Keep in step with `quotes` in the JSON. */
@@ -38,29 +39,18 @@ export default async function HomePage({
   const fmt = (opts: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat(locale, { ...opts, timeZone: 'Europe/Zurich' }).format(now);
 
-  // One quote a day, the same one for all three of us, rolling over at Zurich
-  // midnight. Derived from the date rather than drawn at random on purpose:
-  // `Math.random()` here would pick a different line on the server than on the
-  // client and blow up hydration, and it would also change under you on every
-  // refresh, which kills the "quote of the *day*" joke.
-  const zurichDay = Math.floor(
-    Date.parse(
-      new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Europe/Zurich',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(now)
-    ) / 86_400_000
-  );
-  const quote = tQuote(String(zurichDay % QUOTE_COUNT));
+  // One quote a day and one greeting a day, the same ones for all three of us,
+  // rolling over at Zurich midnight. Both are seeded from the day rather than
+  // drawn at random — `lib/day.ts` explains why that is not a stylistic choice.
+  const day = sharedDayIndex(now);
+  const quote = tQuote(String(day % QUOTE_COUNT));
 
   return (
     <div className="grid grid-cols-1 content-start gap-3 p-3 sm:gap-4 sm:p-4 md:grid-cols-6">
       {/* Greeting — full width, the only large type on the page */}
       <section className="block-card animate-rise-in flex flex-col justify-center gap-2 px-6 py-10 sm:px-10 sm:py-12 md:col-span-6">
         <p className="ps-label">{t('greetingLabel')}</p>
-        <Greeting name={member.displayName.split(' ')[0]} />
+        <Greeting name={member.displayName.split(' ')[0]} day={day} />
       </section>
 
       {/* The reactor — the dominant block */}
