@@ -127,7 +127,19 @@ function ChatBody({ onClose }: { onClose: () => void }) {
     // is handed back to `rows={1}` — which is also exactly how the single-line
     // input this replaced behaved, placeholder clipped and all.
     if (!input) {
-      field.style.height = '';
+      // `rows={1}` is not load-bearing enough on its own. An empty textarea lays
+      // out its *placeholder*, so a placeholder long enough to wrap makes the
+      // box two lines tall — which is what happened here, and what a longer
+      // translation would quietly do again. One row, computed from the field's
+      // own metrics, cannot be talked out of it by the copy.
+      const style = getComputedStyle(field);
+      const oneRow =
+        parseFloat(style.lineHeight) +
+        parseFloat(style.paddingTop) +
+        parseFloat(style.paddingBottom) +
+        parseFloat(style.borderTopWidth) +
+        parseFloat(style.borderBottomWidth);
+      field.style.height = `${oneRow}px`;
       return;
     }
 

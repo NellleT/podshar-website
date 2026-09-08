@@ -103,7 +103,7 @@
     "role": "pug navigator",
     "open": "Open assistant",
     "close": "Close assistant",
-    "placeholder": "ask me, or say where you want dragging",
+    "placeholder": "ask, or say where to",
     "send": "Send",
     "intro": "you are somewhere i have not been. ask where you want to go",
     "offline": "connection dropped. not my fault, blame the wires",
