@@ -154,6 +154,28 @@ function textOf(content: Anthropic.Beta.BetaContentBlock[]): string {
     .trim();
 }
 
+/**
+ * A reply has to contain words.
+ *
+ * Since the emoji set opened up, some messages reliably come back as nothing but
+ * an emoji — "🥀" on its own to someone describing a bad day. In their own chat
+ * that is a real and rather good reply; in a panel whose whole job is answering
+ * questions it is indistinguishable from the site having broken, and the person
+ * cannot tell which it was.
+ *
+ * The brief asks for words twice, in the two places the model weights most, and
+ * it still does this about four times in five on the inputs that invite it. So
+ * the rule lives here instead: an instruction that is only obeyed sometimes is
+ * not a rule. Returning empty rather than throwing lets the existing paths take
+ * over — the keyword table answers, or, if he also called the navigate tool, the
+ * second request asks him to say something about where he just took you.
+ */
+function withWords(text: string): string {
+  if (/\p{L}/u.test(text)) return text;
+  if (text) console.warn(`[podshar] wordless reply discarded: ${text}`);
+  return '';
+}
+
 function navigationIn(content: Anthropic.Beta.BetaContentBlock[]) {
   return content.find(
     (block): block is Anthropic.Beta.BetaToolUseBlock =>
@@ -227,7 +249,7 @@ export async function askPodshar({
     if (first.stop_reason === 'refusal') return null;
 
     const nav = navigationIn(first.content);
-    const said = textOf(first.content);
+    const said = withWords(textOf(first.content));
 
     // Usually he says something *and* calls the tool, which is one round trip.
     if (said) return { reply: said, route: nav?.input ? String((nav.input as { href: string }).href) : undefined };
@@ -244,7 +266,7 @@ export async function askPodshar({
         }
       ]);
       logSpend(second.usage);
-      const followUp = textOf(second.content);
+      const followUp = withWords(textOf(second.content));
       if (followUp) {
         return { reply: followUp, route: String((nav.input as { href: string }).href) };
       }
