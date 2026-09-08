@@ -114,6 +114,8 @@ function vine(
   cursorR: number,
   t: number,
   burst: number,
+  /** 1 while the throw ignores the pointer completely. Outlives `burst`. */
+  release: number,
   /** Lagging angular momentum. Outlives `burst` and overshoots on the return. */
   sway: number,
   /** This vine's random swing for the current press, -1 to 1. */
@@ -132,11 +134,16 @@ function vine(
   // How much this vine behaves as though it were facing the cursor.
   //
   // At rest that is `lobe`, so the field has a front, vines behind stay stubs,
-  // and the whole thing chases the pointer. A burst slides every vine to 1
+  // and the whole thing chases the pointer. `release` slides every vine to 1
   // regardless of where it points, which is what turns the throw into an even
   // circle. Length, weight and brightness all read this, so one value swings
   // the field between chasing and exploding.
-  const facing = lobe + (1 - lobe) * burst;
+  //
+  // `release`, not `burst`. The shove is a spike and is over in 150ms, but the
+  // throw is watched for a second — driving this off `burst` made the field
+  // even for one frame at the peak and lopsided for the rest, which is exactly
+  // what kept a press looking aimed at the mouse.
+  const facing = lobe + (1 - lobe) * release;
 
   // Irrational-ish multiplier, so neighbouring vines never scatter in step.
   // The kick is a fresh random number per vine per press, so the swing has no
@@ -185,10 +192,11 @@ function vine(
   const ringX = targetX + (ux / un) * RING;
   const ringY = targetY + (uy / un) * RING;
 
-  // The press opens the hand completely. `1 - burst`, not a partial release:
-  // while the wave is going out the vines must not still be reaching for the
-  // pointer, or the explosion stays aimed at it however even the push is.
-  const grip = GRIP * lobe * (0.3 + 0.7 * intensity) * (1 - burst);
+  // The press opens the hand completely, and keeps it open for the whole
+  // flight: while the wave is going out the vines must not still be reaching
+  // for the pointer, or the explosion stays aimed at it however even the push
+  // is. The hand closes again only once the swinging has settled.
+  const grip = GRIP * lobe * (0.3 + 0.7 * intensity) * (1 - release);
   const tipX = freeX + (ringX - freeX) * grip;
   const tipY = freeY + (ringY - freeY) * grip;
 
@@ -198,7 +206,7 @@ function vine(
   const side = tangential >= 0 ? 1 : -1;
   // Faded out by the burst for the same reason as the grip: a vine still
   // curving toward the cursor mid-throw reads as reluctance, not scatter.
-  const bend = CURL * len * tangential * (0.3 + 0.7 * align) * (1 - burst) + drift * 1.9;
+  const bend = CURL * len * tangential * (0.3 + 0.7 * align) * (1 - release) + drift * 1.9;
 
   // First control point: out along the vine's own bearing, swung sideways. This
   // is the stem, and it keeps its own direction as it leaves the core.
@@ -235,6 +243,7 @@ export function ReactorVines({
   distance,
   halfSize,
   burst,
+  release,
   sway,
   seed,
   still
@@ -245,8 +254,10 @@ export function ReactorVines({
   distance: MotionValue<number>;
   /** Half the container's width in px, for converting px to viewBox units. */
   halfSize: MotionValue<number>;
-  /** 1 at the instant of a press, decaying to 0. Opens the grip. */
+  /** 1 at the instant of a press, decaying to 0. This is the shove itself. */
   burst: MotionValue<number>;
+  /** 1 while the throw ignores the pointer. Held flat for the whole flight. */
+  release: MotionValue<number>;
   /** Angular momentum: outlives `burst`, and overshoots before settling. */
   sway: MotionValue<number>;
   /** Press counter. A change is the cue to roll fresh kicks for the throw. */
@@ -303,9 +314,10 @@ export function ReactorVines({
     const cursorR = (distance.get() / half) * 100;
 
     const bu = burst.get();
+    const rl = release.get();
     const sw = sway.get();
     for (let k = 0; k < VINE_ANGLES.length; k++) {
-      apply(k, vine(VINE_ANGLES[k], k, b, i, cursorR, t, bu, sw, kicks.current[k]));
+      apply(k, vine(VINE_ANGLES[k], k, b, i, cursorR, t, bu, rl, sw, kicks.current[k]));
     }
   });
 
@@ -313,7 +325,7 @@ export function ReactorVines({
   useEffect(() => {
     if (!still) return;
     for (let k = 0; k < VINE_ANGLES.length; k++) {
-      apply(k, vine(VINE_ANGLES[k], k, -Math.PI / 2, 0.16, REACH_CLAMP, 0, 0, 0, 0));
+      apply(k, vine(VINE_ANGLES[k], k, -Math.PI / 2, 0.16, REACH_CLAMP, 0, 0, 0, 0, 0));
     }
   }, [still]);
 
@@ -321,7 +333,7 @@ export function ReactorVines({
   // client's first frame overwrites them with identical numbers rather than
   // tripping hydration.
   const rest = VINE_ANGLES.map((angle, k) =>
-    vine(angle, k, -Math.PI / 2, 0.16, REACH_CLAMP, 0, 0, 0, 0)
+    vine(angle, k, -Math.PI / 2, 0.16, REACH_CLAMP, 0, 0, 0, 0, 0)
   );
 
   return (

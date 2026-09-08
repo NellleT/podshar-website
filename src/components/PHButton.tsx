@@ -142,6 +142,11 @@ export function PHButton() {
   // would be seventeen more things updating every frame for a difference no one
   // could see, since each vine already scales this by its own random kick.
   const sway = useMotionValue(0);
+  // How far the field has let go of the cursor: 1 means the pointer does not
+  // exist as far as the vines are concerned. Deliberately not `punch` — see the
+  // animation in `press` for why the shove and the release cannot share a
+  // curve.
+  const release = useMotionValue(0);
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -260,6 +265,22 @@ export function PHButton() {
       ease: 'easeOut'
     });
 
+    // Letting go of the pointer, on its own envelope.
+    //
+    // The shove is a spike by design: momentum arrives all at once. But "the
+    // cursor does not exist" has to hold for as long as the throw is visible,
+    // which is the best part of two seconds. Rising faster than the shove opens
+    // the hand *before* the push lands; the flat middle is the flight; and the
+    // long ease back returns the chase only once the vines have stopped
+    // swinging, so nothing snaps sideways at the end. Same duration as `sway`
+    // for that reason — the grip must not come back while a vine is still
+    // moving.
+    animate(release, [0, 1, 1, 0], {
+      duration: BURST_SECONDS * 1.4,
+      times: [0, 0.05, 0.55, 1],
+      ease: ['easeOut', 'linear', 'easeInOut']
+    });
+
     // The swing outlives the shove and overshoots slightly on the way back —
     // the small negative is a vine passing centre before it settles. Without
     // it the return is the outward path played backwards, which is the thing
@@ -344,6 +365,7 @@ export function PHButton() {
           distance={distance}
           halfSize={halfSize}
           burst={punch}
+          release={release}
           sway={sway}
           seed={seed}
           still={Boolean(reduceMotion)}
