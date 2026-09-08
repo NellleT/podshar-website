@@ -66,7 +66,16 @@ export function LeftSidebar({
       {/* Pinned to the open width so nothing reflows while the width animates. */}
       <div className="flex h-full w-sidebar flex-col lg:w-sidebar-lg">
         <header className="flex items-center justify-between border-b border-rule-soft px-5 py-4">
-          <PodsharWordmark className="text-xs font-semibold text-ink" />
+          {/* Same as the one in the top bar — see the note in AppShell. The
+              negative margin pulls the hover surface back under the header
+              padding so the letters stay on the same line as everything else. */}
+          <Link
+            href="/"
+            aria-label={tHome('goHome')}
+            className="-ms-2 rounded px-2 py-1 transition-colors duration-drape ease-drape hover:bg-sunk"
+          >
+            <PodsharWordmark className="text-xs font-semibold text-ink" />
+          </Link>
           <button
             ref={closeRef}
             type="button"

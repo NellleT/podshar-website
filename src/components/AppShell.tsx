@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { usePathname } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
 import { LeftSidebar } from './LeftSidebar';
 import { RightAIChat } from './RightAIChat';
 import { PodsharWordmark } from './PodsharMark';
@@ -80,7 +80,18 @@ export function AppShell({
             <span className="h-0.5 w-4 bg-ink transition-all duration-drape ease-drape group-hover:w-5" />
           </button>
 
-          <PodsharWordmark className="text-xs font-semibold text-ink-muted" />
+          {/* The wordmark is the way back to the homepage, here and in the
+              drawer. It is a link at the call site rather than inside
+              `PodsharWordmark`, because the same wordmark heads the login and
+              join pages, where "home" is a page you are not allowed on yet and
+              the click would land you back on the login screen. */}
+          <Link
+            href="/"
+            aria-label={t('goHome')}
+            className="rounded px-2 py-1 transition-colors duration-drape ease-drape hover:bg-sunk"
+          >
+            <PodsharWordmark className="text-xs font-semibold text-ink-muted" />
+          </Link>
         </header>
 
         <main className="flex flex-1 flex-col">{children}</main>

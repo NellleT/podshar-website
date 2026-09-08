@@ -42,3 +42,4 @@ yarn-error.log*
 .env*
 # ...but the template carries no secrets and belongs in the repository.
 !.env.example
+chrome-headless-shell/

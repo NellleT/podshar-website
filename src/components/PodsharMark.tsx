@@ -64,7 +64,13 @@ export function PodsharMark({
   );
 }
 
-/** Wordmark used in the sidebar header and the page chrome. */
+/**
+ * Wordmark used in the sidebar header and the page chrome.
+ *
+ * Deliberately not a link. Inside the app both instances are wrapped in one and
+ * point home; on the login and join pages the same wordmark must stay inert,
+ * because there is no homepage to reach until you are signed in.
+ */
 export function PodsharWordmark({ className = '' }: { className?: string }) {
   return (
     <span
