@@ -33,6 +33,7 @@ export async function getCurrentMember(): Promise<MemberProfile> {
   return {
     displayName: user.displayName,
     handle: user.handle,
+    avatarPreset: user.avatarPreset,
     // Avatars arrive with the media pipeline; the column is a reference into
     // `media_assets`, not a URL, so resolving it is a separate join later.
     avatarUrl: null

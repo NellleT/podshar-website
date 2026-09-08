@@ -1,0 +1,312 @@
+'use client';
+
+import { useActionState, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useLocale, useTranslations } from 'next-intl';
+
+import {
+  changePassword,
+  createInvite,
+  revokeOtherSessions,
+  updateIdentity,
+  type ProfileState
+} from '@/lib/auth/profile';
+import { routing, LOCALE_LABELS, type Locale } from '@/i18n/routing';
+import { AVATAR_PRESETS, MemberAvatar } from './MemberAvatar';
+
+/**
+ * The three forms on the profile page, plus the owner's invite box.
+ *
+ * Each is its own `<form>` with its own action and its own state. One big form
+ * would mean typing a password to change a display name, and a failure in any
+ * field would reject the lot.
+ */
+
+/** Shared chrome: a titled block in the site's one surface style. */
+function Section({
+  title,
+  hint,
+  children
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="block-card flex flex-col gap-5 p-6 sm:p-8">
+      <div className="flex flex-col gap-1.5">
+        <h2 className="text-xl font-semibold leading-tight text-ink">{title}</h2>
+        {hint ? <p className="text-sm leading-relaxed text-ink-muted">{hint}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Field({
+  name,
+  label,
+  type = 'text',
+  defaultValue,
+  autoComplete,
+  prefix,
+  required = true
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  defaultValue?: string;
+  autoComplete?: string;
+  /** Rendered inside the field, before the input — used for the `@` on handles. */
+  prefix?: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="ps-label">{label}</span>
+      <span className="flex items-center gap-1 rounded border-2 border-rule bg-canvas px-3 transition-colors focus-within:border-ink">
+        {prefix ? <span className="text-[0.9375rem] text-ink-faint">{prefix}</span> : null}
+        <input
+          name={name}
+          type={type}
+          defaultValue={defaultValue}
+          autoComplete={autoComplete}
+          required={required}
+          className="min-w-0 flex-1 bg-transparent py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-faint"
+        />
+      </span>
+    </label>
+  );
+}
+
+/** Submit plus the result line, which is the same shape in every form here. */
+function Footer({ state, label }: { state: ProfileState; label: string }) {
+  const t = useTranslations('profile');
+  const { pending } = useFormStatus();
+
+  const message = state.error
+    ? t.has(`errors.${state.error}`)
+      ? t(`errors.${state.error}`)
+      : t('errors.invalid')
+    : state.ok
+      ? t('saved')
+      : null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded border-2 border-transparent bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink transition-opacity duration-drape hover:opacity-85 disabled:opacity-40"
+      >
+        {pending ? t('working') : label}
+      </button>
+      {message ? (
+        <p
+          role="status"
+          className={`text-sm ${state.error ? 'text-reactor' : 'text-ink-muted'}`}
+        >
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function IdentityForm({
+  member
+}: {
+  member: {
+    displayName: string;
+    handle: string;
+    email: string;
+    locale: string;
+    timeZone: string;
+    avatarPreset: string | null;
+  };
+}) {
+  const t = useTranslations('profile');
+  const [state, action] = useActionState<ProfileState, FormData>(updateIdentity, {});
+  // The picked avatar is local state so the preview updates before saving.
+  const [avatar, setAvatar] = useState(member.avatarPreset ?? '');
+
+  return (
+    <form action={action}>
+      <Section title={t('identityTitle')} hint={t('identityHint')}>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
+          <div className="flex items-center gap-4 sm:flex-col sm:gap-3">
+            <MemberAvatar
+              preset={avatar || null}
+              displayName={member.displayName}
+              className="h-20 w-20"
+            />
+            <span className="ps-label sm:text-center">{t('avatarLabel')}</span>
+          </div>
+
+          <div className="flex flex-1 flex-col gap-4">
+            <Field
+              name="displayName"
+              label={t('displayName')}
+              defaultValue={member.displayName}
+              autoComplete="nickname"
+            />
+            <Field
+              name="handle"
+              label={t('handle')}
+              defaultValue={member.handle}
+              prefix="@"
+              autoComplete="username"
+            />
+            <Field
+              name="email"
+              label={t('email')}
+              type="email"
+              defaultValue={member.email}
+              autoComplete="email"
+            />
+          </div>
+        </div>
+
+        {/* Avatar picker. A radio group, so it is keyboard-reachable and one
+            choice is always the current one. */}
+        <fieldset className="flex flex-col gap-3">
+          <legend className="ps-label mb-1">{t('avatarPick')}</legend>
+          <div className="flex flex-wrap gap-2">
+            {['', ...AVATAR_PRESETS].map((preset) => {
+              const selected = avatar === preset;
+              return (
+                <label
+                  key={preset || 'none'}
+                  className={`cursor-pointer rounded-full p-0.5 transition-shadow ${
+                    selected ? 'ring-2 ring-ink' : 'ring-1 ring-transparent hover:ring-rule'
+                  }`}
+                  title={preset || t('avatarInitials')}
+                >
+                  <input
+                    type="radio"
+                    name="avatarPreset"
+                    value={preset}
+                    checked={selected}
+                    onChange={() => setAvatar(preset)}
+                    className="sr-only"
+                  />
+                  <MemberAvatar
+                    preset={preset || null}
+                    displayName={member.displayName}
+                    className="h-11 w-11"
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-2">
+            <span className="ps-label">{t('language')}</span>
+            <select
+              name="locale"
+              defaultValue={member.locale}
+              className="rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[0.9375rem] text-ink outline-none transition-colors focus:border-ink"
+            >
+              {routing.locales.map((l) => (
+                <option key={l} value={l}>
+                  {LOCALE_LABELS[l as Locale]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <Field name="timeZone" label={t('timeZone')} defaultValue={member.timeZone} />
+        </div>
+
+        <Footer state={state} label={t('save')} />
+      </Section>
+    </form>
+  );
+}
+
+export function PasswordForm() {
+  const t = useTranslations('profile');
+  const [state, action] = useActionState<ProfileState, FormData>(changePassword, {});
+
+  return (
+    <form action={action}>
+      <Section title={t('passwordTitle')} hint={t('passwordHint')}>
+        <div className="flex flex-col gap-4">
+          <Field
+            name="current"
+            label={t('currentPassword')}
+            type="password"
+            autoComplete="current-password"
+          />
+          <Field
+            name="next"
+            label={t('newPassword')}
+            type="password"
+            autoComplete="new-password"
+          />
+          <Field
+            name="confirm"
+            label={t('confirmPassword')}
+            type="password"
+            autoComplete="new-password"
+          />
+        </div>
+        <Footer state={state} label={t('changePassword')} />
+      </Section>
+    </form>
+  );
+}
+
+export function SessionsForm() {
+  const t = useTranslations('profile');
+  const [state, action] = useActionState<ProfileState, FormData>(
+    async () => revokeOtherSessions(),
+    {}
+  );
+
+  return (
+    <form action={action}>
+      <Section title={t('sessionsTitle')} hint={t('sessionsHint')}>
+        <Footer state={state} label={t('revokeOthers')} />
+      </Section>
+    </form>
+  );
+}
+
+export function InviteForm() {
+  const t = useTranslations('profile');
+  const locale = useLocale();
+  const [state, action] = useActionState<{ token?: string; error?: string }, FormData>(
+    createInvite,
+    {}
+  );
+
+  const link = state.token
+    ? `${typeof window === 'undefined' ? '' : window.location.origin}/${locale}/join?token=${state.token}`
+    : null;
+
+  return (
+    <form action={action}>
+      <Section title={t('inviteTitle')} hint={t('inviteHint')}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field name="inviteHandle" label={t('inviteHandle')} prefix="@" />
+          <Field name="inviteEmail" label={t('inviteEmail')} type="email" />
+        </div>
+
+        {link ? (
+          // Shown once and never again: only the hash is stored, exactly like
+          // the seeded invites.
+          <div className="flex flex-col gap-2 rounded border-2 border-rule bg-sunk p-4">
+            <p className="ps-label">{t('inviteReady')}</p>
+            <code className="break-all text-[0.8125rem] leading-relaxed text-ink">{link}</code>
+            <p className="text-sm text-ink-muted">{t('inviteOnce')}</p>
+          </div>
+        ) : null}
+
+        <Footer state={state.error ? { error: state.error } : {}} label={t('createInvite')} />
+      </Section>
+    </form>
+  );
+}

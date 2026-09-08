@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { Greeting } from '@/components/Greeting';
+import { MemberAvatar } from '@/components/profile/MemberAvatar';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
 import { getCurrentMember } from '@/lib/session';
@@ -82,12 +83,11 @@ export default async function HomePage({
       <section className="block-card animate-rise-in flex flex-col gap-4 p-6 [animation-delay:180ms] md:col-span-2">
         <p className="ps-label">{t('memberLabel')}</p>
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden="true"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-rule bg-sunk text-base font-semibold text-ink"
-          >
-            {member.displayName.slice(0, 1).toUpperCase()}
-          </span>
+          <MemberAvatar
+            preset={member.avatarPreset}
+            displayName={member.displayName}
+            className="h-11 w-11"
+          />
           <div className="min-w-0">
             <p className="truncate text-2xl font-semibold leading-tight text-ink">
               {member.displayName}

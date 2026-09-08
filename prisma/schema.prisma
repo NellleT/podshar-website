@@ -172,6 +172,11 @@ model User {
   role         MemberRole @default(MEMBER)
   locale       Locale     @default(en)
   avatarId     String?    @unique
+  /// One of the built-in avatars, by id. Deliberately separate from `avatarId`,
+  /// which points at an uploaded file: picking a preset must not require the
+  /// media pipeline (S3, MediaAsset, /api/media) to exist first. When uploads
+  /// land, `avatarId` wins and this stays as the fallback.
+  avatarPreset String?
   timeZone     String     @default("Europe/Zurich")
   homeLocationId String?
   createdAt    DateTime   @default(now())

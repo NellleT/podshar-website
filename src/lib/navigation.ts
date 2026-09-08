@@ -73,6 +73,30 @@ export const HOME: Place = {
   ]
 };
 
+/**
+ * The profile page. Like HOME it is a place but not a nav destination: you get
+ * there from your own name in the drawer, not from a menu of sections. The dog
+ * still has to know it exists — it is the second page on the site that does.
+ */
+export const PROFILE: Place = {
+  id: 'profile',
+  href: '/profile',
+  status: 'live',
+  labelKey: 'profile',
+  terms: [
+    'профил', 'профіл', 'настройк', 'налаштув', 'аккаунт', 'акаунт',
+    'пароль', 'аватар', 'почт', 'пошт', 'мейл', 'имя смен', "ім'я змін",
+    'profile', 'settings', 'account', 'password', 'avatar', 'email',
+    'profil', 'einstellung', 'konto', 'passwort'
+  ],
+  elements: [
+    { id: 'identity', terms: ['имя', "ім'я", 'хендл', 'name', 'handle', 'nick'] },
+    { id: 'avatar', terms: ['аватар', 'картинк', 'фотк', 'avatar', 'picture', 'bild'] },
+    { id: 'security', terms: ['пароль', 'пароля', 'безопасн', 'безпек', 'password', 'passwort', 'security'] },
+    { id: 'invite', terms: ['пригласи', 'запроси', 'инвайт', 'invite', 'einladung'] }
+  ]
+};
+
 export const NAV_GROUPS: NavGroup[] = [
   {
     titleKey: 'daily',
@@ -188,7 +212,11 @@ export const NAV_GROUPS: NavGroup[] = [
 ];
 
 /** Every place the dog knows, homepage first so it wins an ambiguous match. */
-export const ALL_PLACES: Place[] = [HOME, ...NAV_GROUPS.flatMap((group) => group.items)];
+export const ALL_PLACES: Place[] = [
+  HOME,
+  PROFILE,
+  ...NAV_GROUPS.flatMap((group) => group.items)
+];
 
 /**
  * Loose, deliberately dumb matching.

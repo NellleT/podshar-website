@@ -94,7 +94,8 @@
     "geopolitics": "Karte",
     "games": "Spiele",
     "gameStats": "Spielstatistiken",
-    "home": "Startseite"
+    "home": "Startseite",
+    "profile": "profil"
   },
   "assistant": {
     "name": "Podshar",
@@ -123,6 +124,13 @@
       "quote": "gedanke des tages. einer für alle drei, wechselt um mitternacht. tiefe nicht enthalten",
       "drawer": "das menü links. fünf leere zeilen sind ehrlichkeit, kein fehler: es gibt noch keine bereiche",
       "dog": "ich bin der mops. ich kenne hier alles, hauptsächlich weil hier nichts ist"
+    },
+    "profile": {
+      "here": "dein profil. name, handle, e-mail, passwort und ein zeichen statt gesicht",
+      "identity": "name und handle. der name ist für uns, mit dem handle meldest du dich an",
+      "avatar": "acht zeichen. noch keine fotos, dafür auch nichts hochzuladen",
+      "security": "passwort. änderst du es, fliegen alle anderen geräte raus",
+      "invite": "der knopf für eine vierte person. nur der besitzer hat ihn"
     }
   },
   "quotes": {
@@ -157,6 +165,56 @@
       "mismatch": "die passwörter sind unterschiedlich.",
       "tooShort": "mindestens 10 zeichen, bitte.",
       "nameTooShort": "ein name mit mindestens zwei zeichen."
+    }
+  },
+  "profile": {
+    "label": "deine einstellungen",
+    "title": "profil",
+    "intro": "alles, was die seite über dich weiss, und du kannst es ändern. passwort inklusive.",
+    "identityTitle": "wer du bist",
+    "identityHint": "den namen sehen die anderen zwei. mit dem handle meldest du dich an.",
+    "displayName": "name",
+    "handle": "handle",
+    "email": "e-mail",
+    "language": "sprache",
+    "timeZone": "zeitzone",
+    "avatarLabel": "jetzt",
+    "avatarPick": "zeichen wählen",
+    "avatarInitials": "buchstaben",
+    "save": "speichern",
+    "saved": "gespeichert",
+    "working": "moment",
+    "passwordTitle": "passwort",
+    "passwordHint": "ein neues passwort wirft dich von allen anderen geräten. das ist absicht.",
+    "currentPassword": "aktuelles passwort",
+    "newPassword": "neues passwort",
+    "confirmPassword": "neues nochmal",
+    "changePassword": "passwort ändern",
+    "sessionsTitle": "geräte",
+    "sessionsHint": "auf fremdem laptop angemeldet geblieben? hier.",
+    "revokeOthers": "überall sonst abmelden",
+    "inviteTitle": "einladen",
+    "inviteHint": "der link gilt einmal und zwei wochen. gib ihn selbst weiter, per mail geht nichts raus.",
+    "inviteHandle": "handle der person",
+    "inviteEmail": "ihre e-mail",
+    "createInvite": "link erstellen",
+    "inviteReady": "bitte sehr, kopieren",
+    "inviteOnce": "wird einmal gezeigt. weg ist weg, dann eben ein neuer.",
+    "errors": {
+      "invalid": "hier stimmt etwas nicht.",
+      "signedOut": "sitzung abgelaufen. melde dich neu an.",
+      "nameTooShort": "mindestens zwei zeichen.",
+      "badHandle": "handle: lateinische buchstaben, ziffern und _, 2 bis 20 zeichen.",
+      "badEmail": "das sieht nicht nach einer e-mail aus.",
+      "badAvatar": "dieses zeichen gibt es nicht.",
+      "handleTaken": "dieses handle ist vergeben.",
+      "emailTaken": "diese e-mail ist vergeben.",
+      "tooShort": "mindestens 10 zeichen.",
+      "mismatch": "die neuen passwörter sind unterschiedlich.",
+      "samePassword": "das ist dasselbe passwort.",
+      "wrongCurrent": "aktuelles passwort ist falsch.",
+      "ownerOnly": "einladen darf nur der besitzer.",
+      "alreadyInvited": "handle oder e-mail steht schon auf der liste."
     }
   }
 }

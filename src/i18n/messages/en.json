@@ -94,7 +94,8 @@
     "geopolitics": "Map",
     "games": "Games",
     "gameStats": "Game stats",
-    "home": "Home"
+    "home": "Home",
+    "profile": "profile"
   },
   "assistant": {
     "name": "Podshar",
@@ -123,6 +124,13 @@
       "quote": "thought of the day. one for all three of you, changes at midnight. depth not included",
       "drawer": "the menu on the left. five empty rows is honesty, not a bug: there are no sections yet",
       "dog": "i am the pug. i know everything here, mostly because there is nothing here"
+    },
+    "profile": {
+      "here": "your profile. name, handle, email, password and a mark instead of a face",
+      "identity": "name and handle. the name is for us, the handle is how you sign in",
+      "avatar": "eight marks. no photos yet, but nothing to upload either",
+      "security": "password. change it and every other device gets kicked",
+      "invite": "the button that adds a fourth person. owner only"
     }
   },
   "quotes": {
@@ -157,6 +165,56 @@
       "mismatch": "the two passwords are different.",
       "tooShort": "at least 10 characters, please.",
       "nameTooShort": "a name of at least two characters."
+    }
+  },
+  "profile": {
+    "label": "your settings",
+    "title": "profile",
+    "intro": "everything the site knows about you, and you can change all of it. password included.",
+    "identityTitle": "who you are",
+    "identityHint": "the name is what the other two see. the handle is what you sign in with.",
+    "displayName": "name",
+    "handle": "handle",
+    "email": "email",
+    "language": "language",
+    "timeZone": "time zone",
+    "avatarLabel": "now",
+    "avatarPick": "pick a mark",
+    "avatarInitials": "letters",
+    "save": "save",
+    "saved": "saved",
+    "working": "one moment",
+    "passwordTitle": "password",
+    "passwordHint": "changing it throws you out of every other device. that is on purpose.",
+    "currentPassword": "current password",
+    "newPassword": "new password",
+    "confirmPassword": "new one again",
+    "changePassword": "change password",
+    "sessionsTitle": "devices",
+    "sessionsHint": "left yourself signed in on someone elses laptop? here.",
+    "revokeOthers": "sign out everywhere else",
+    "inviteTitle": "invite",
+    "inviteHint": "the link works once and lasts two weeks. hand it over yourself, nothing is emailed.",
+    "inviteHandle": "their handle",
+    "inviteEmail": "their email",
+    "createInvite": "make a link",
+    "inviteReady": "there you go, copy it",
+    "inviteOnce": "shown once. lose it and you make another.",
+    "errors": {
+      "invalid": "something here is wrong.",
+      "signedOut": "your session ended. sign in again.",
+      "nameTooShort": "at least two characters.",
+      "badHandle": "handle: latin letters, digits and _, 2 to 20 characters.",
+      "badEmail": "that does not look like an email.",
+      "badAvatar": "no such mark.",
+      "handleTaken": "that handle is taken.",
+      "emailTaken": "that email is taken.",
+      "tooShort": "at least 10 characters.",
+      "mismatch": "the new passwords are different.",
+      "samePassword": "that is the same password.",
+      "wrongCurrent": "current password is wrong.",
+      "ownerOnly": "only the owner can invite.",
+      "alreadyInvited": "that handle or email is already on the list."
     }
   }
 }

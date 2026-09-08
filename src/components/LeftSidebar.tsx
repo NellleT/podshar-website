@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { PRIMARY_NAV_SLOTS } from '@/lib/navigation';
+import { Link } from '@/i18n/routing';
+import { MemberAvatar } from './profile/MemberAvatar';
 import { PodsharWordmark } from './PodsharMark';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { SignOutButton } from './auth/SignOutButton';
@@ -50,14 +52,6 @@ export function LeftSidebar({
     if (open) closeRef.current?.focus();
   }, [open]);
 
-  const initials = profile.displayName
-    .split(/\s+/)
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-
   return (
     <aside
       id="podshar-nav"
@@ -89,30 +83,26 @@ export function LeftSidebar({
               them — the stats belong to the profile, not beside it. */}
           <section className="px-5 pb-6 pt-6">
             <p className="ps-label mb-4">{t('profile')}</p>
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-rule bg-sunk text-base font-semibold text-ink">
-                {profile.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  initials
-                )}
-              </div>
+            {/* The whole row is the link. A profile is one destination, and a
+                separate "edit" control beside your own name is a button for
+                something the name already implies. */}
+            <Link
+              href="/profile"
+              className="-mx-2 flex items-center gap-3 rounded px-2 py-2 transition-colors duration-drape hover:bg-sunk"
+            >
+              <MemberAvatar
+                preset={profile.avatarPreset}
+                displayName={profile.displayName}
+                className="h-12 w-12"
+              />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-lg font-semibold leading-tight text-ink">
                   {profile.displayName}
                 </p>
                 <p className="truncate text-sm text-ink-muted">@{profile.handle}</p>
               </div>
-              {/* Editing lands in Phase 2. The affordance is reserved now. */}
-              <button
-                type="button"
-                disabled
-                className="ps-label cursor-not-allowed text-ink-faint"
-              >
-                {t('editProfile')}
-              </button>
-            </div>
+              <span className="ps-label shrink-0 text-ink-faint">{t('editProfile')}</span>
+            </Link>
 
             <p className="ps-label mb-3 mt-7">{t('stats')}</p>
             <dl className="grid grid-cols-2 gap-2">

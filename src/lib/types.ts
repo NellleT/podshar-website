@@ -9,6 +9,8 @@ export type MemberProfile = {
   displayName: string;
   handle: string;
   avatarUrl?: string | null;
+  /** One of the built-in marks, or null for initials. */
+  avatarPreset?: string | null;
 };
 
 export type QuickStats = {
