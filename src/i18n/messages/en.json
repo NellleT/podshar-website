@@ -5,44 +5,44 @@
   },
   "greeting": {
     "night": {
-      "0": "three in the morning, <n>{name}</n>. all normal",
+      "0": "three in the morning <n>{name}</n>, all normal",
       "1": "have you tried sleeping, <n>{name}</n>?",
-      "2": "night. the hour of bad decisions",
-      "3": "oh, <n>{name}</n>. awake again",
-      "4": "normal people are asleep. you are here",
-      "5": "the site is the same at night. go to bed",
-      "6": "two hours of scrolling and not one thought",
-      "7": "good night. that was sarcasm"
+      "2": "night, the hour of bad decisions",
+      "3": "oh <n>{name}</n>, awake again",
+      "4": "normal people are asleep, you are here",
+      "5": "the site is the same at night, go to bed",
+      "6": "two hours of scrolling, not one thought",
+      "7": "good night, that was sarcasm"
     },
     "morning": {
       "0": "look who crawled out, <n>{name}</n>",
       "1": "morning, peasant <n>{name}</n>",
-      "2": "up you get, <n>{name}</n>, the country needs you",
-      "3": "morning. you look like an overdue invoice",
+      "2": "up you get <n>{name}</n>, the country needs you",
+      "3": "morning, you look like an overdue invoice",
       "4": "good morning, allegedly",
-      "5": "awake? that is more than yesterday",
-      "6": "oh, alive. we had bets on it",
-      "7": "coffee will not fix it, <n>{name}</n>, but go on"
+      "5": "awake? more than yesterday",
+      "6": "oh, alive, we had bets on it",
+      "7": "coffee will not fix it <n>{name}</n>, go on"
     },
     "afternoon": {
-      "0": "well hello, <n>{name}</n>. comfortable?",
-      "1": "midday. achievements so far: opened a website",
-      "2": "oh, <n>{name}</n>. the work will not postpone itself",
-      "3": "you are back. i am not surprised",
-      "4": "did you eat? do not lie to me, <n>{name}</n>",
-      "5": "daylight. outside. you are in here",
-      "6": "busy, <n>{name}</n>? you need not answer",
-      "7": "half the day gone, <n>{name}</n>, and the plans are still plans"
+      "0": "well hello <n>{name}</n>, comfortable?",
+      "1": "half the day gone, sod all done",
+      "2": "oh <n>{name}</n>, the work will not postpone itself",
+      "3": "you are back, i am not surprised",
+      "4": "did you eat? do not lie to me <n>{name}</n>",
+      "5": "daylight, outside, you are in here",
+      "6": "busy <n>{name}</n>? you need not answer",
+      "7": "midday, and the plans are still plans"
     },
     "evening": {
-      "0": "evening. today’s score: nothing, <n>{name}</n>",
-      "1": "evening <n>{name}</n>. the honest one",
-      "2": "the day is over. you are not",
-      "3": "evening, <n>{name}</n>. time to look tired",
-      "4": "so how was it? do not answer",
-      "5": "sunset. same trousers as this morning",
+      "0": "evening, today’s score is nothing",
+      "1": "oh, evening <n>{name}</n>, the honest one",
+      "2": "the day is over, you are not",
+      "3": "evening <n>{name}</n>, time to look tired",
+      "4": "so how was it? never mind",
+      "5": "sunset, same trousers as this morning",
       "6": "good evening, if we are calling it that",
-      "7": "<n>{name}</n>, tomorrow is the same. brace yourself"
+      "7": "<n>{name}</n>, tomorrow is the same, damn it"
     }
   },
   "home": {
@@ -111,26 +111,26 @@
     "expand": "Expand assistant"
   },
   "guide": {
-    "lost": "not a word of that made sense. name a section, or ask about something you can see",
-    "soon": "{place}? does not exist. nobody built it yet. not my department",
-    "going": "fine, taking you to {place}. keep up",
-    "hello": "yeah, hello. what do you want?",
+    "lost": "no idea what that was. name a section, or ask about what you see",
+    "soon": "{place}? does not exist, nobody built it",
+    "going": "fine, taking you to {place}",
+    "hello": "yeah, hello. what do you want",
     "home": {
-      "here": "the home page. one big red button, the date, you, and a thought of the day. touch anything you like, nothing will happen",
-      "greeting": "that is me saying hello. a different line every day, so it does not go stale",
-      "reactor": "the ПХ button. it says do not press. you already pressed it, i watched",
-      "today": "date and time. the date is the same for all three of you, the clock is yours — it comes from your own machine",
-      "member": "that is you. name, handle, and a letter instead of a face. photos when someone gets round to it",
-      "quote": "thought of the day. one for all three of you, changes at midnight. depth not included",
-      "drawer": "the menu on the left. five empty rows is honesty, not a bug: there are no sections yet",
-      "dog": "i am the pug. i know everything here, mostly because there is nothing here"
+      "here": "the home page. a red button, the date, you, a thought",
+      "greeting": "that is me saying hello, a new line every day",
+      "reactor": "the ПХ button, says do not press. you pressed it",
+      "today": "date and clock. the date is shared, the clock is your machine",
+      "member": "that is you. name, handle, a letter instead of a face",
+      "quote": "thought of the day, one for all three. no depth",
+      "drawer": "the menu. five empty rows, no sections yet",
+      "dog": "i am the pug. i know everything here, there is bugger all here"
     },
     "profile": {
-      "here": "your profile. name, handle, email, password and a mark instead of a face",
-      "identity": "name and handle. the name is for us, the handle is how you sign in",
-      "avatar": "eight marks. no photos yet, but nothing to upload either",
-      "security": "password. change it and every other device gets kicked",
-      "invite": "the button that adds a fourth person. owner only"
+      "here": "your profile. name, handle, email, password, a mark",
+      "identity": "the name is for us, the handle is for signing in",
+      "avatar": "eight marks. no photos, nothing to upload either",
+      "security": "password. change it and every other device drops",
+      "invite": "adds a fourth person. owner only"
     }
   },
   "quotes": {

@@ -39,6 +39,96 @@ const SWEARING: Record<Locale, { right: string; tooMuch: string }> = {
   }
 };
 
+/**
+ * How the three of them actually write, measured rather than guessed.
+ *
+ * Counted over 7,239 text messages of their own group chat — the three of them
+ * only; a fourth person in that chat is not part of this site and was excluded,
+ * along with a bot. Every number below
+ * comes from that count, and the numbers are the point: "write casually" is an
+ * instruction every model has already averaged into mush, while "fifteen of your
+ * last seven thousand messages ended in a full stop" is a shape it can copy.
+ *
+ * Numbers and vocabulary, never the messages themselves. Almost nothing in that
+ * archive can be quoted: the lines are about the gym, Dota and what time to
+ * meet, so they carry the register and none of the meaning — and the ones with
+ * the most character in them are aimed at each other in ways a website has no
+ * business repeating. Two practical reasons on top of the obvious one: a brief
+ * carrying slurs is what a safety classifier declines, and a refusal here drops
+ * the dog silently to the keyword table, which reads from outside as the model
+ * having gone stupid. This also keeps it cheap — a paragraph, not a corpus.
+ */
+const HABITS = `HOW THESE THREE WRITE, COUNTED FROM 7,239 OF THEIR OWN MESSAGES
+
+- The median message is three words. Two thirds are three words or fewer.
+- Twelve of the 7,239 ended in a full stop. Do not end on one.
+- One in eighteen contains a comma. Sub-clauses are not their register.
+- Lower case at the start of the line, unless it is a name.
+- No emoji, no smileys, no ")))".
+- Questions frequently carry no question mark.
+- They misspell constantly. Copy the shape of the writing, never the typos.`;
+
+/**
+ * Their words, in the two languages they actually use.
+ *
+ * The chat is 94% Cyrillic and mixes Russian and Ukrainian freely, often inside
+ * one sentence. That mixing is theirs and not his: he answers in the one
+ * language he was addressed in, so each list holds only what belongs to it.
+ *
+ * English and German get nothing. The archive is two per cent Latin script and
+ * contains no German at all, so there is nothing to copy, and inventing slang
+ * for them would be the "blin" incident in reverse — a voice belonging to
+ * nobody. Those two locales get the habits above and no vocabulary, which is
+ * the honest version.
+ *
+ * In code rather than in the four catalogues, unlike the rest of the voice.
+ * Everything in `messages/*.json` is shipped whole to the browser; this is the
+ * dog's calibration, it is read on the server only, and there is no reason for
+ * it to travel to a page that never renders it.
+ */
+/**
+ * Four phrases that belong to these three and to nobody else.
+ *
+ * Handed over by the owner directly rather than mined from the archive: none of
+ * the four occurs in those 7,239 messages, so there is no measured rate behind
+ * the cap below — it is a judgement, and the one number on this page that is.
+ *
+ * Glossed instead of listed, unlike SLANG, because three of them are not words
+ * but moves: where in the line they go and what they do to it. Handed a bare
+ * "галдааа" a model will drop it into the middle of a straight answer, where it
+ * reads as a typo rather than a joke.
+ *
+ * Capped hard, and harder than the swearing. A new toy is the thing a model
+ * cannot leave alone, and an in-joke said every time is no longer one — with
+ * only four of them, overuse would burn all four inside a week.
+ */
+const IN_JOKES = `- «галдааа» — tacked onto the very end of a line, and only when the line is a
+  joke. Never in a straight answer, never in the middle of one.
+- «коч братан» — what you call someone who has just called you братан. It is a
+  reply to being addressed that way, not an opener.
+- «бурмалда», «бурмалдить» — nonsense, and to talk nonsense. Said about what
+  the other person just came out with.
+- «ягами арт» — a genius. Almost always sarcastic.`;
+
+/**
+ * Russian and Ukrainian only, for the same reason SLANG is. These are Cyrillic
+ * in-jokes; a German reply carrying one is the "blin" incident with a different
+ * word in it.
+ */
+const PHRASES: Record<Locale, string | null> = {
+  ru: IN_JOKES,
+  uk: IN_JOKES,
+  en: null,
+  de: null
+};
+
+const SLANG: Record<Locale, string | null> = {
+  ru: 'шо, го, хз, пацики, ток, скок, мб, ща, кст, щас, типо, имба, норм, кайф, изи, факт, пздц, пон, всм, чел, лан, харош, анлак, рил',
+  uk: 'шо, го, хз, пацики, ток, скок, мб, кст, тіпа, імба, норм, кайф, факт, пздц, треба, нема, зроз, ніт, чел, харош, анлак',
+  en: null,
+  de: null
+};
+
 /** Strip the rich-text markup a greeting line carries, so it reads as plain speech. */
 const plain = (line: string) => line.replace(/<\/?n>/g, '').replace('{name}', 'Trqwaa');
 
@@ -111,8 +201,9 @@ fond of them. On the surface, never.
 
 Reply in ${LANGUAGE[locale]}, whatever language you are addressed in.
 
-Length. One or two short sentences, never three. No line breaks, no blank lines,
-no lists. If it does not fit in about fifteen words, cut it — do not wrap it.
+Length. One sentence. Their own median message is three words long, so three
+to seven is normal and fifteen is a ceiling you rarely need to reach. No line
+breaks, no blank lines, no lists. If it does not fit, cut it — do not wrap it.
 
 Register.
 - Lowercase throughout, except proper nouns and ПХ.
@@ -127,8 +218,9 @@ Register.
   sting on a bad day, it is the wrong line.
 - You are a bored dog with a job. You do it. You are not grateful for it.
 
-Swearing. Allowed, and kept mild. Roughly one reply in four — never twice in a
-row, never two in one sentence. It works because it is occasional; a dog that
+Swearing. Allowed, and kept mild. Roughly one reply in seven, which is their own
+measured rate — 15% of those 7,239 messages carry one. Never twice in a row,
+never two in one sentence. It works because it is occasional; a dog that
 swears in every line is just noise. Both examples below are in the language you
 are writing in, which is the only language you may swear in.
 
@@ -139,6 +231,8 @@ are writing in, which is the only language you may swear in.
 Lines already written in your voice. This is the target register:
 ${samples}
 
+${HABITS}
+${SLANG[locale] ? `\nWords they reach for instead of the ordinary ones:\n${SLANG[locale]}\n` : ''}${PHRASES[locale] ? `\nTheir own in-jokes. At most one in a reply, and most replies carry none —\nthey work because they are rare:\n${PHRASES[locale]}\n` : ''}
 Wrong, and why:
 - "Of course! Let me show you 😊" — polite, eager, emoji. You are none of those.
 - "The gallery is not ready yet, but it is coming soon!" — promises something
