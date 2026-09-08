@@ -9,6 +9,9 @@ import { AssistantLauncher } from './AssistantLauncher';
 
 type Message = { id: string; role: 'assistant' | 'user'; text: string };
 
+/** How tall the message field may grow before it starts scrolling, in pixels. */
+const MAX_FIELD = 120;
+
 /**
  * Podshar, the resident assistant.
  *
@@ -44,7 +47,7 @@ export function RightAIChat() {
 
   // Move focus into the panel on open, so the keyboard follows the eye.
   useEffect(() => {
-    if (open) panelRef.current?.querySelector('input')?.focus();
+    if (open) panelRef.current?.querySelector('textarea')?.focus();
   }, [open]);
 
   return (
@@ -80,6 +83,7 @@ function ChatBody({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const logRef = useRef<HTMLDivElement | null>(null);
+  const fieldRef = useRef<HTMLTextAreaElement | null>(null);
 
   // A guide opens by saying where you are standing, not with a menu. The
   // fallback covers a page the map does not describe, which today cannot
@@ -102,8 +106,40 @@ function ChatBody({ onClose }: { onClose: () => void }) {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
+  // Grow the field down as the text wraps, instead of scrolling the beginning of
+  // a sentence out of sight in a one-line box. Height is set from the content's
+  // own `scrollHeight`, which is why it has to be cleared to `auto` first:
+  // scrollHeight never reports less than the height already set, so without the
+  // reset the field would grow and then refuse to shrink when text is deleted.
+  //
+  // Capped at MAX_FIELD, past which it scrolls. The panel is a fixed column with
+  // the conversation above the field, and a box that keeps growing eats the
+  // conversation it is a reply to.
+  useEffect(() => {
+    const field = fieldRef.current;
+    if (!field) return;
+    field.style.height = 'auto';
+
+    // Empty is not "no content": an empty textarea reports the height of its
+    // *placeholder*, which wraps to two lines in a panel this narrow. Measured
+    // that way the box would open two lines tall and jump shorter at the first
+    // keystroke. With nothing typed there is nothing to grow to, so the height
+    // is handed back to `rows={1}` — which is also exactly how the single-line
+    // input this replaced behaved, placeholder clipped and all.
+    if (!input) {
+      field.style.height = '';
+      return;
+    }
+
+    // `scrollHeight` counts content and padding but not the border, and the box
+    // is `border-box`, so assigning it straight leaves the field two pixels
+    // short at the top and bottom and quietly clips the line it is meant to fit.
+    const border = field.offsetHeight - field.clientHeight;
+    field.style.height = `${Math.min(field.scrollHeight + border, MAX_FIELD)}px`;
+  }, [input]);
+
+  async function send(e?: React.FormEvent) {
+    e?.preventDefault();
     const text = input.trim();
     if (!text || busy) return;
 
@@ -191,12 +227,27 @@ function ChatBody({ onClose }: { onClose: () => void }) {
         {busy ? <p className="ps-label animate-pulse">• • •</p> : null}
       </div>
 
-      <form onSubmit={send} className="flex items-center gap-2 border-t border-rule-soft p-3">
-        <input
+      {/* `items-end` so the button stays on the last line as the field grows,
+          rather than floating in the middle of a four-line message. */}
+      <form onSubmit={send} className="flex items-end gap-2 border-t border-rule-soft p-3">
+        <textarea
+          ref={fieldRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter sends, shift+Enter breaks the line — the arrangement every
+            // chat box has, and the reason a textarea here does not cost you the
+            // ability to just type and hit return. `isComposing` guards the
+            // Enter that only confirms a character being composed.
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              void send();
+            }
+          }}
+          rows={1}
           placeholder={t('placeholder')}
-          className="min-w-0 flex-1 rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[0.9375rem] text-ink outline-none transition-colors focus:border-ink placeholder:text-ink-faint"
+          aria-label={t('placeholder')}
+          className="min-w-0 flex-1 resize-none overflow-y-auto rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[0.9375rem] leading-relaxed text-ink outline-none transition-colors focus:border-ink placeholder:text-ink-faint"
         />
         <button
           type="submit"
