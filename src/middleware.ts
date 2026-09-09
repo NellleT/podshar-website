@@ -7,8 +7,15 @@ import { guestModeAllowed } from './lib/auth/config';
 
 const handleI18n = createMiddleware(routing);
 
-/** Pages a signed-out visitor is allowed to reach, after the locale prefix. */
-const PUBLIC = /^\/(login|join)(\/|$)/;
+/**
+ * Pages a signed-out visitor is allowed to reach, after the locale prefix.
+ *
+ * `reset` belongs here for the same reason as `login`: the only person who ever
+ * needs it is by definition unable to sign in. Left out, the password reset is
+ * not merely awkward — it is unreachable, and nothing in a type check or a
+ * build says so, because the page itself is perfectly correct.
+ */
+const PUBLIC = /^\/(login|join|reset)(\/|$)/;
 
 /**
  * Locale routing first, then a cheap access check.

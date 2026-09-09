@@ -177,7 +177,8 @@
       "mismatch": "the two passwords are different.",
       "tooShort": "at least 10 characters, please.",
       "nameTooShort": "a name of at least two characters."
-    }
+    },
+    "forgot": "forgot your password?"
   },
   "profile": {
     "label": "your settings",
@@ -227,6 +228,31 @@
       "wrongCurrent": "current password is wrong.",
       "ownerOnly": "only the owner can invite.",
       "alreadyInvited": "that handle or email is already on the list."
+    }
+  },
+  "reset": {
+    "title": "forgot your password",
+    "hint": "happens. type your email and we will send a link to set a new one.",
+    "email": "email",
+    "send": "send the link",
+    "working": "one moment",
+    "sentTitle": "if that address is ours, the letter is on its way",
+    "sentBody": "check your inbox, and the spam folder too. the link lasts an hour and works once. no letter probably means we do not have that address.",
+    "newTitle": "new password",
+    "newHint": "ten characters at least. saving it signs you out everywhere — that is the point, not a bug.",
+    "password": "new password",
+    "confirm": "again",
+    "save": "save",
+    "noMail": "resetting by email is not wired up yet. ask the owner for now, they can do it by hand.",
+    "mailSubject": "podshar: a new password",
+    "mailBody": "{name}, someone (hopefully you) forgot their podshar password.\n\nhere is the link to set a new one:\n{link}\n\nit lasts {minutes} minutes and works once. if this was not you, just do not open it — your old password is untouched.",
+    "errors": {
+      "invalid": "something here is wrong.",
+      "badEmail": "that does not look like an email.",
+      "badToken": "that link is no good. it may have been used already.",
+      "expired": "that link has expired. ask for a new one.",
+      "tooShort": "at least 10 characters.",
+      "mismatch": "the passwords are different."
     }
   }
 }

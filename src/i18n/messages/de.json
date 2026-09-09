@@ -177,7 +177,8 @@
       "mismatch": "die passwörter sind unterschiedlich.",
       "tooShort": "mindestens 10 zeichen, bitte.",
       "nameTooShort": "ein name mit mindestens zwei zeichen."
-    }
+    },
+    "forgot": "passwort vergessen?"
   },
   "profile": {
     "label": "deine einstellungen",
@@ -227,6 +228,31 @@
       "wrongCurrent": "aktuelles passwort ist falsch.",
       "ownerOnly": "einladen darf nur der besitzer.",
       "alreadyInvited": "handle oder e-mail steht schon auf der liste."
+    }
+  },
+  "reset": {
+    "title": "passwort vergessen",
+    "hint": "passiert. schreib deine e-mail — wir schicken einen link für ein neues.",
+    "email": "e-mail",
+    "send": "link schicken",
+    "working": "moment",
+    "sentTitle": "wenn die adresse unsere ist, ist der brief unterwegs",
+    "sentBody": "schau ins postfach, und in den spam-ordner auch. der link gilt eine stunde und funktioniert einmal. kein brief heisst wohl, dass wir diese adresse nicht haben.",
+    "newTitle": "neues passwort",
+    "newHint": "mindestens zehn zeichen. speichern meldet dich überall ab — das ist absicht, kein fehler.",
+    "password": "neues passwort",
+    "confirm": "nochmal",
+    "save": "speichern",
+    "noMail": "zurücksetzen per e-mail ist noch nicht eingerichtet. frag so lange den besitzer, er macht es von hand.",
+    "mailSubject": "podshar: ein neues passwort",
+    "mailBody": "{name}, jemand (hoffentlich du) hat sein podshar-passwort vergessen.\n\nhier ist der link für ein neues:\n{link}\n\ner gilt {minutes} minuten und funktioniert einmal. warst du das nicht, öffne ihn einfach nicht — dein altes passwort bleibt, wie es war.",
+    "errors": {
+      "invalid": "hier stimmt etwas nicht.",
+      "badEmail": "das sieht nicht nach einer e-mail aus.",
+      "badToken": "dieser link taugt nicht. vielleicht wurde er schon benutzt.",
+      "expired": "dieser link ist abgelaufen. hol dir einen neuen.",
+      "tooShort": "mindestens 10 zeichen.",
+      "mismatch": "die passwörter sind unterschiedlich."
     }
   }
 }
