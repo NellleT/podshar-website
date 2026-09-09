@@ -68,6 +68,14 @@ export const HOME: Place = {
     { id: 'today', terms: ['дата', 'число', 'часы', 'годин', 'час', 'время', 'clock', 'time', 'date', 'uhr', 'datum'] },
     { id: 'member', terms: ['профил', 'профіл', 'аккаунт', 'акаунт', 'кто я', 'хто я', 'who am i', 'profile', 'profil', 'konto'] },
     { id: 'quote', terms: ['цитат', 'мысл', 'думк', 'quote', 'thought', 'spruch', 'gedank'] },
+    {
+      id: 'patches',
+      terms: [
+        'патч', 'patch', 'обновл', 'оновл', 'верси', 'версі', 'version',
+        'changelog', 'änderung', 'neuerung', 'что нового', 'що нового',
+        'what changed', 'was neu'
+      ]
+    },
     { id: 'drawer', terms: ['меню', 'шторк', 'menu', 'menü', 'навигац', 'навігац'] },
     { id: 'dog', terms: ['мопс', 'собак', 'пёс', 'пес', 'mops', 'pug', 'hund', 'ты кто', 'ти хто', 'who are you'] }
   ]

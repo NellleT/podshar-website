@@ -4,6 +4,7 @@ import { Greeting } from '@/components/Greeting';
 import { MemberAvatar } from '@/components/profile/MemberAvatar';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
+import { Patches } from '@/components/Patches';
 import { getCurrentMember } from '@/lib/session';
 import { sharedDayIndex } from '@/lib/day';
 import { resolveLocale } from '@/lib/locale';
@@ -111,6 +112,13 @@ export default async function HomePage({
         >
           ПХ™
         </span>
+      </section>
+
+      {/* Что менялось на сайте. Внизу намеренно: это единственный блок, который
+          читают не каждый день, и место под цитатой — ровно та высота, до
+          которой доходят, когда уже всё остальное посмотрели. */}
+      <section className="block-card animate-rise-in flex flex-col gap-3 p-6 [animation-delay:300ms] sm:px-10 md:col-span-6">
+        <Patches locale={locale} />
       </section>
     </div>
   );

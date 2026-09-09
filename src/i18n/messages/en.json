@@ -56,6 +56,7 @@
     "greetingLabel": "hey",
     "memberLabel": "who is this",
     "quoteLabel": "thought of the day",
+    "patchesLabel": "what changed",
     "pressCount": "{count} presses. still nothing",
     "press": {
       "1": "really?",
@@ -123,6 +124,7 @@
       "today": "date and clock. the date is shared, the clock is your machine",
       "member": "that is you. name, handle, a letter instead of a face",
       "quote": "thought of the day, one for all three. no depth",
+      "patches": "the patch list. who did what, so nobody argues later",
       "drawer": "the menu. five empty rows, no sections yet",
       "dog": "i am the pug. i know everything here, there is bugger all here"
     },
