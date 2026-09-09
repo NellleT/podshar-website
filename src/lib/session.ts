@@ -24,28 +24,49 @@ const GUEST: MemberProfile = {
 };
 
 /**
- * Ники по хендлам — подписи под патчами.
+ * Ники участников — подписи под патчами.
  *
  * В `lib/patches.ts` записан хендл, а не имя, и это не лень. Хендл — ключ: он
  * переживает переименование в профиле, а запись полугодовой давности не должна
- * ссылаться на имя, которого у человека уже нет. Показываемое имя берётся
- * отсюда, из базы, при каждом рендере.
+ * ссылаться на имя, которого у человека уже нет.
  *
- * Пустая карта — законный ответ, а не сбой: в разработке базы может не быть
- * вовсе, а хендла может не оказаться в таблице. Вызывающий тогда показывает
- * `@хендл` — честно и читаемо, просто без имени.
+ * Берём всю таблицу, а не `where handle in`, и раскладываем по двум ключам —
+ * хендлу и имени, оба в нижнем регистре. Причина не в красоте: первая версия
+ * искала точное совпадение хендла и на проде молча не нашла ничего, а под
+ * патчами остались `@one` и `@two`. Пользователей трое, потолок ставят
+ * приглашения, так что запрос дешёвый, а совпадение теперь переживает и другой
+ * регистр, и запись, где вместо хендла написали имя.
+ *
+ * Пустая карта — законный ответ: без базы в разработке её просто нет. А вот
+ * «база есть, а автора в ней нет» — это не норма, и об этом пишется в лог:
+ * молчаливое вырождение в `@хендл` выглядит как «фича не работает», и причину
+ * из интерфейса не достать.
  */
 export async function getMemberNames(handles: string[]): Promise<Record<string, string>> {
   if (!authConfigured() || handles.length === 0) return {};
 
   try {
-    const users = await prisma.user.findMany({
-      where: { handle: { in: handles } },
-      select: { handle: true, displayName: true }
-    });
-    return Object.fromEntries(users.map((user) => [user.handle, user.displayName]));
-  } catch {
-    // Подпись под патчем не стоит того, чтобы ронять страницу.
+    const users = await prisma.user.findMany({ select: { handle: true, displayName: true } });
+
+    const names: Record<string, string> = {};
+    for (const user of users) {
+      names[user.handle.toLowerCase()] = user.displayName;
+      names[user.displayName.toLowerCase()] = user.displayName;
+    }
+
+    const unknown = handles.filter((handle) => !names[handle.toLowerCase()]);
+    if (unknown.length > 0) {
+      console.warn(
+        `[podshar] авторы патчей, которых нет в базе: ${unknown.join(', ')}. ` +
+          `В базе есть: ${users.map((user) => `${user.handle} (${user.displayName})`).join(', ')}`
+      );
+    }
+
+    return names;
+  } catch (error) {
+    // Подпись под патчем не стоит того, чтобы ронять страницу. Но и молчать
+    // нельзя — иначе причина потеряна навсегда.
+    console.warn('[podshar] не удалось прочитать имена участников:', error);
     return {};
   }
 }

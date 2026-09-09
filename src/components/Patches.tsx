@@ -90,7 +90,9 @@ export async function PatchList({ locale }: { locale: Locale }) {
             {/* `ps-label` переводит всё в строчные — это верно для подписи и
                 неверно для имени человека: «Trqwaa» превращался в «trqwaa».
                 Дата остаётся лейблом, имя из регистра не выбивают. */}
-            <span className="normal-case">{names[patch.author] ?? `@${patch.author}`}</span>
+            <span className="normal-case">
+              {names[patch.author.toLowerCase()] ?? `@${patch.author}`}
+            </span>
           </span>
           <span className="col-span-2 text-base leading-snug text-ink sm:order-2 sm:col-span-1">
             {patch.note}
