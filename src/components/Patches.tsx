@@ -1,67 +1,95 @@
 import { getTranslations } from 'next-intl/server';
 
+import { Link } from '@/i18n/routing';
 import { CURRENT_VERSION, PATCHES } from '@/lib/patches';
 import type { Locale } from '@/i18n/routing';
 
 /**
- * Что менялось на сайте — блок на главной.
- *
- * Серверный компонент: тут нечего нажимать, и список не меняется между
- * загрузками, так что отправлять его в браузер вместе с React нет смысла.
- *
- * Список прокручивается внутри блока, а не обрезается на пятой записи. Отдельной
- * страницы «все патчи» нет намеренно — согласованный план кончается на главной,
- * и заводить новый маршрут ради пятнадцати строк значило бы придумать за них
- * следующий шаг. Своя прокрутка решает ту же задачу и ничего не обещает.
- *
- * Дата разбирается в UTC. Строка вида `2026-09-08` и так означает полночь UTC,
- * и форматирование в чужой зоне сдвинуло бы половину записей на день назад.
+ * Даты патчей разбираются в UTC. Строка вида `2026-09-08` и так означает
+ * полночь UTC, и форматирование в чужой зоне сдвинуло бы половину записей на
+ * день назад.
  */
-export async function Patches({ locale }: { locale: Locale }) {
-  const t = await getTranslations('home');
-
-  const day = new Intl.DateTimeFormat(locale, {
+function formatter(locale: Locale) {
+  return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: 'short',
     timeZone: 'UTC'
   });
+}
+
+/**
+ * Кнопка на главной: номер текущей версии, последняя строка и стрелка на
+ * страницу со всем списком.
+ *
+ * Раньше список целиком лежал на главной. Пятнадцать строк в прокручиваемом
+ * окошке — это уже не блок бенто, а страница, зажатая в блок: читать неудобно,
+ * а места занимает как реактор. Кнопка говорит ровно то, ради чего на неё
+ * смотрят с главной — «что-то поменялось, вот последнее» — и уводит туда, где
+ * список можно нормально листать.
+ */
+export async function PatchesCard() {
+  const t = await getTranslations('home');
+  const latest = PATCHES[0];
 
   return (
-    <>
-      <header className="flex items-baseline justify-between gap-4">
+    <Link
+      href="/patches"
+      className="block-card animate-rise-in group flex flex-col gap-3 p-6 transition-colors duration-drape ease-drape [animation-delay:300ms] hover:bg-sunk sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-10 md:col-span-6"
+    >
+      <div className="min-w-0">
         <p className="ps-label">{t('patchesLabel')}</p>
-        <span className="text-label font-semibold tabular-nums text-ink-faint">
+        <p className="mt-1 truncate text-base text-ink sm:text-lg">{latest.note}</p>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-3">
+        <span className="text-base font-semibold tabular-nums text-ink">
           v{CURRENT_VERSION}
         </span>
-      </header>
+        <span className="ps-label">{t('patchesAll')}</span>
+        {/* Стрелка декоративная: ссылку уже называет текст внутри неё. */}
+        <span
+          aria-hidden="true"
+          className="text-base text-ink-faint transition-transform duration-drape ease-drape group-hover:translate-x-0.5"
+        >
+          &rarr;
+        </span>
+      </div>
+    </Link>
+  );
+}
 
-      {/* `overscroll-contain`, чтобы прокрутка списка не утаскивала за собой
-          страницу, когда добралась до края. */}
-      <ol className="max-h-80 overflow-y-auto overscroll-contain sm:max-h-64">
-        {PATCHES.map((patch, index) => (
-          // Две раскладки одной сеткой. На узком экране номер и подпись делят
-          // верхнюю строку, а текст занимает всю ширину под ними — иначе номер
-          // съедает целую строку и в блок помещается два патча. На широком всё
-          // выстраивается в одну строку, и порядок меняет `order`, а не вторая
-          // разметка: одна разметка не может разъехаться сама с собой.
-          <li
-            key={patch.version}
-            className={`grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1 py-3 sm:grid-cols-[3rem_1fr_auto] ${
-              index > 0 ? 'ps-rule' : ''
-            }`}
-          >
-            <span className="text-base font-semibold tabular-nums text-ink sm:order-1">
-              {patch.version}
-            </span>
-            <span className="ps-label justify-self-end tabular-nums sm:order-3">
-              {day.format(new Date(patch.date))} &middot; @{patch.author}
-            </span>
-            <span className="col-span-2 text-base leading-snug text-ink sm:order-2 sm:col-span-1">
-              {patch.note}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </>
+/**
+ * Весь список, на своей странице. Прокрутки внутри нет — прокручивается
+ * страница, а это и есть вся её работа.
+ */
+export function PatchList({ locale }: { locale: Locale }) {
+  const day = formatter(locale);
+
+  return (
+    <ol>
+      {PATCHES.map((patch, index) => (
+        // Две раскладки одной сеткой. На узком экране номер и подпись делят
+        // верхнюю строку, а текст занимает всю ширину под ними — иначе номер
+        // съедает целую строку. На широком всё выстраивается в одну строку, и
+        // порядок меняет `order`, а не вторая разметка: одна разметка не может
+        // разъехаться сама с собой.
+        <li
+          key={patch.version}
+          className={`grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1 py-3 sm:grid-cols-[3.5rem_1fr_auto] ${
+            index > 0 ? 'ps-rule' : ''
+          }`}
+        >
+          <span className="text-base font-semibold tabular-nums text-ink sm:order-1">
+            {patch.version}
+          </span>
+          <span className="ps-label justify-self-end tabular-nums sm:order-3">
+            {day.format(new Date(patch.date))} &middot; @{patch.author}
+          </span>
+          <span className="col-span-2 text-base leading-snug text-ink sm:order-2 sm:col-span-1">
+            {patch.note}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }

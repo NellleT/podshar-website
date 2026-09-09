@@ -105,6 +105,26 @@ export const PROFILE: Place = {
   ]
 };
 
+/**
+ * Страница патчей. Тоже не в `NAV_GROUPS`: попасть на неё можно кнопкой с
+ * главной, а пять слотов в шторке зарезервированы под разделы, которых пока нет.
+ *
+ * Элементов у неё нет — вся страница и есть один список, и описывать внутри
+ * нечего. Кнопка на главной при этом осталась отдельным элементом `home`: это
+ * два разных вопроса, «что за кнопка внизу» и «что это за страница».
+ */
+export const PATCHES_PLACE: Place = {
+  id: 'patches',
+  href: '/patches',
+  status: 'live',
+  labelKey: 'patches',
+  terms: [
+    'патч', 'patch', 'обновл', 'оновл', 'верси', 'версі', 'version',
+    'changelog', 'änderung', 'neuerung', 'что нового', 'що нового',
+    'what changed', 'was neu', 'история изменен', 'історія змін'
+  ]
+};
+
 export const NAV_GROUPS: NavGroup[] = [
   {
     titleKey: 'daily',
@@ -223,6 +243,7 @@ export const NAV_GROUPS: NavGroup[] = [
 export const ALL_PLACES: Place[] = [
   HOME,
   PROFILE,
+  PATCHES_PLACE,
   ...NAV_GROUPS.flatMap((group) => group.items)
 ];
 

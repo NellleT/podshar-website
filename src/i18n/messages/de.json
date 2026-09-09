@@ -57,6 +57,7 @@
     "memberLabel": "wer ist das",
     "quoteLabel": "gedanke des tages",
     "patchesLabel": "was neu ist",
+    "patchesAll": "alle patches",
     "pressCount": "{count} mal gedrückt. immer noch nichts",
     "press": {
       "1": "ernsthaft?",
@@ -66,6 +67,10 @@
       "5": "okay, mach ruhig weiter",
       "6": "der knopf ist müde. du nicht"
     }
+  },
+  "patches": {
+    "title": "Patches",
+    "hint": "neueste zuerst. kleinkram steht auch drin"
   },
   "sidebar": {
     "profile": "das bist du",
@@ -97,7 +102,8 @@
     "games": "Spiele",
     "gameStats": "Spielstatistiken",
     "home": "Startseite",
-    "profile": "profil"
+    "profile": "profil",
+    "patches": "Patches"
   },
   "assistant": {
     "name": "Podshar",
@@ -124,9 +130,12 @@
       "today": "datum und uhr. das datum ist für alle gleich, die uhr ist deine",
       "member": "das bist du. name, handle, ein buchstabe statt gesicht",
       "quote": "gedanke des tages, einer für alle drei. keine tiefe",
-      "patches": "die patch-liste. wer was gemacht hat, damit später keiner streitet",
+      "patches": "der knopf unten. drück drauf, da ist die ganze patch-liste",
       "drawer": "das menü. fünf leere zeilen, noch keine bereiche",
       "dog": "ich bin der mops. ich kenne hier alles, hier ist nix, verdammt"
+    },
+    "patches": {
+      "here": "alle patches, nach nummer. wer was gemacht hat und wann"
     },
     "profile": {
       "here": "dein profil. name, handle, e-mail, passwort, ein zeichen",

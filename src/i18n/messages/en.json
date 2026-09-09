@@ -57,6 +57,7 @@
     "memberLabel": "who is this",
     "quoteLabel": "thought of the day",
     "patchesLabel": "what changed",
+    "patchesAll": "all patches",
     "pressCount": "{count} presses. still nothing",
     "press": {
       "1": "really?",
@@ -66,6 +67,10 @@
       "5": "fine. keep going",
       "6": "the button is tired. you are not"
     }
+  },
+  "patches": {
+    "title": "Patches",
+    "hint": "newest first. the small stuff is in here too"
   },
   "sidebar": {
     "profile": "that's you",
@@ -97,7 +102,8 @@
     "games": "Games",
     "gameStats": "Game stats",
     "home": "Home",
-    "profile": "profile"
+    "profile": "profile",
+    "patches": "Patches"
   },
   "assistant": {
     "name": "Podshar",
@@ -124,9 +130,12 @@
       "today": "date and clock. the date is shared, the clock is your machine",
       "member": "that is you. name, handle, a letter instead of a face",
       "quote": "thought of the day, one for all three. no depth",
-      "patches": "the patch list. who did what, so nobody argues later",
+      "patches": "the button at the bottom. press it, the whole patch list is there",
       "drawer": "the menu. five empty rows, no sections yet",
       "dog": "i am the pug. i know everything here, there is bugger all here"
+    },
+    "patches": {
+      "here": "every patch, by number. who did what and when"
     },
     "profile": {
       "here": "your profile. name, handle, email, password, a mark",
