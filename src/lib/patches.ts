@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.16',
+    date: '2026-09-09',
+    author: 'trqwaa',
+    note: 'забыл пароль — приходит письмо со ссылкой, а не «напиши разработчику»'
+  },
+  {
     version: '0.15',
     date: '2026-09-09',
     author: 'nellet',
