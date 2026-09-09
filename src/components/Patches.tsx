@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { Link } from '@/i18n/routing';
 import { CURRENT_VERSION, PATCHES } from '@/lib/patches';
+import { getMemberNames } from '@/lib/session';
 import type { Locale } from '@/i18n/routing';
 
 /**
@@ -62,8 +63,10 @@ export async function PatchesCard() {
  * Весь список, на своей странице. Прокрутки внутри нет — прокручивается
  * страница, а это и есть вся её работа.
  */
-export function PatchList({ locale }: { locale: Locale }) {
+export async function PatchList({ locale }: { locale: Locale }) {
   const day = formatter(locale);
+  // Одним запросом на весь список, а не по строке на патч.
+  const names = await getMemberNames([...new Set(PATCHES.map((patch) => patch.author))]);
 
   return (
     <ol>
@@ -83,7 +86,11 @@ export function PatchList({ locale }: { locale: Locale }) {
             {patch.version}
           </span>
           <span className="ps-label justify-self-end tabular-nums sm:order-3">
-            {day.format(new Date(patch.date))} &middot; @{patch.author}
+            {day.format(new Date(patch.date))} &middot;{' '}
+            {/* `ps-label` переводит всё в строчные — это верно для подписи и
+                неверно для имени человека: «Trqwaa» превращался в «trqwaa».
+                Дата остаётся лейблом, имя из регистра не выбивают. */}
+            <span className="normal-case">{names[patch.author] ?? `@${patch.author}`}</span>
           </span>
           <span className="col-span-2 text-base leading-snug text-ink sm:order-2 sm:col-span-1">
             {patch.note}

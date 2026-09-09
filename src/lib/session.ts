@@ -23,6 +23,33 @@ const GUEST: MemberProfile = {
   avatarUrl: null
 };
 
+/**
+ * Ники по хендлам — подписи под патчами.
+ *
+ * В `lib/patches.ts` записан хендл, а не имя, и это не лень. Хендл — ключ: он
+ * переживает переименование в профиле, а запись полугодовой давности не должна
+ * ссылаться на имя, которого у человека уже нет. Показываемое имя берётся
+ * отсюда, из базы, при каждом рендере.
+ *
+ * Пустая карта — законный ответ, а не сбой: в разработке базы может не быть
+ * вовсе, а хендла может не оказаться в таблице. Вызывающий тогда показывает
+ * `@хендл` — честно и читаемо, просто без имени.
+ */
+export async function getMemberNames(handles: string[]): Promise<Record<string, string>> {
+  if (!authConfigured() || handles.length === 0) return {};
+
+  try {
+    const users = await prisma.user.findMany({
+      where: { handle: { in: handles } },
+      select: { handle: true, displayName: true }
+    });
+    return Object.fromEntries(users.map((user) => [user.handle, user.displayName]));
+  } catch {
+    // Подпись под патчем не стоит того, чтобы ронять страницу.
+    return {};
+  }
+}
+
 export async function getCurrentMember(): Promise<MemberProfile> {
   if (!authConfigured()) return GUEST;
 
