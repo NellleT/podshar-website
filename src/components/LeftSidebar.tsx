@@ -34,38 +34,53 @@ import type { MemberProfile, QuickStats } from '@/lib/types';
  */
 export function LeftSidebar({
   open,
-  onClose,
   profile,
   stats
 }: {
   open: boolean;
-  onClose: () => void;
   profile: MemberProfile;
   stats: QuickStats;
 }) {
   const t = useTranslations('sidebar');
   const tHome = useTranslations('home');
   const tNav = useTranslations('nav');
-  const closeRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
 
+  // Focus moves into the panel itself rather than onto a control inside it.
+  // There is no close cross here any more — the top bar's switch is the only
+  // one — so the useful thing to announce on opening is the region, and from
+  // there the first Tab lands on the profile row.
   useEffect(() => {
-    if (open) closeRef.current?.focus();
+    if (open) panelRef.current?.focus();
   }, [open]);
 
   return (
     <aside
       id="podshar-nav"
+      ref={panelRef}
+      tabIndex={-1}
       aria-label={t('navigation')}
       // Collapsed content stays in the DOM, so without `inert` a keyboard user
       // tabs into rows that are clipped to zero width.
       inert={!open}
-      className={`sticky top-0 h-dvh shrink-0 self-start overflow-hidden bg-surface transition-[width] duration-drape ease-drape ${
-        open ? 'w-sidebar border-r-2 border-rule lg:w-sidebar-lg' : 'w-0'
+      // The max-width is what keeps the only close control on screen. The panel
+      // pushes the canvas, and the canvas carries the switch that closes it, so
+      // a panel wide enough to shove that switch past the right edge would trap
+      // someone on a narrow phone with no way out but Escape. 4.5rem leaves room
+      // for the 44px button and its padding at any width.
+      className={`sticky top-0 h-dvh shrink-0 self-start overflow-hidden bg-surface outline-none transition-[width] duration-drape ease-drape ${
+        open
+          ? 'w-sidebar max-w-[calc(100vw-4.5rem)] border-r-2 border-rule lg:w-sidebar-lg'
+          : 'w-0'
       }`}
     >
       {/* Pinned to the open width so nothing reflows while the width animates. */}
       <div className="flex h-full w-sidebar flex-col lg:w-sidebar-lg">
-        <header className="flex items-center justify-between border-b border-rule-soft px-5 py-4">
+        {/* No close cross here. It sat a couple of centimetres from the top
+            bar's switch, which had by then gone inert — two identical-looking
+            controls where only one did anything. The switch stays, this one
+            goes, and the panel is closed from the same place it was opened. */}
+        <header className="flex items-center border-b border-rule-soft px-5 py-4">
           {/* Same as the one in the top bar — see the note in AppShell. The
               negative margin pulls the hover surface back under the header
               padding so the letters stay on the same line as everything else. */}
@@ -76,15 +91,6 @@ export function LeftSidebar({
           >
             <PodsharWordmark className="text-xs font-semibold text-ink" />
           </Link>
-          <button
-            ref={closeRef}
-            type="button"
-            onClick={onClose}
-            aria-label={tHome('closeMenu')}
-            className="grid h-9 w-9 place-items-center rounded border-2 border-rule text-base leading-none text-ink-muted transition-colors duration-drape hover:bg-sunk hover:text-ink"
-          >
-            &#215;
-          </button>
         </header>
 
         <div className="flex-1 overflow-y-auto overscroll-contain">

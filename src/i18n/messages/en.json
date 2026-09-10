@@ -66,7 +66,8 @@
       "4": "you are not going to stop, are you",
       "5": "fine. keep going",
       "6": "the button is tired. you are not"
-    }
+    },
+    "goBack": "back to the homepage"
   },
   "patches": {
     "title": "Patches",

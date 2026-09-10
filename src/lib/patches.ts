@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.17',
+    date: '2026-09-10',
+    author: 'trqwaa',
+    note: 'кнопка меню теперь и закрывает его, и на страницах появилась стрелка назад'
+  },
+  {
     version: '0.16',
     date: '2026-09-09',
     author: 'trqwaa',
