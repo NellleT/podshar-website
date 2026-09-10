@@ -66,8 +66,26 @@ export function AppShell({
       <LeftSidebar open={navOpen} profile={profile} stats={stats} />
 
       <div className="flex min-w-full flex-1 flex-col lg:min-w-0">
-        {/* Top bar. The trigger lives in the flow, so the push carries it. */}
-        <header className="flex items-center justify-between border-b border-rule px-3 py-3 sm:px-4">
+        {/* Top bar. The trigger lives in the flow, so the push carries it.
+
+            Sticky, so the way out travels with you. The switch here is the only
+            thing that closes the drawer and the arrow is the only obvious way
+            back, and a page of patches is long enough that both used to scroll
+            out of reach — leaving the reader to haul themselves back to the top
+            to go anywhere.
+
+            `bg-canvas` is load-bearing: the bar had no background of its own,
+            which is invisible while it sits at the top of the page and becomes
+            content sliding through the letters the moment it stops moving.
+            `z-30` puts it over the canvas and under the dog, who is fixed at
+            z-50 and should stay on top of everything.
+
+            This works only because the row above uses `overflow-x: clip`
+            rather than `hidden` — `hidden` computes `overflow-y` to `auto` and
+            would make that row a scroll container, against which `top-0` means
+            the top of the row and not the top of the screen. The bar would then
+            never stick at all. */}
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-rule bg-canvas px-3 py-3 sm:px-4">
           <div className="flex items-center gap-2">
             {/* One control, not two.
 

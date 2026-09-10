@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.18',
+    date: '2026-09-10',
+    author: 'trqwaa',
+    note: 'шапка едет за тобой при прокрутке, а не остаётся наверху страницы'
+  },
+  {
     version: '0.17',
     date: '2026-09-10',
     author: 'trqwaa',
