@@ -17,14 +17,21 @@ import { CURRENT_VERSION } from '@/lib/patches';
  * when you wonder what changed.
  *
  * Here it sits with the other facts about the site rather than about the day:
- * who you are, what language, which version, and the way out. That is where
- * people already look for it.
+ * who you are, what language, which version, and the way out.
  */
 
 /** The newest version this device has actually read. */
 const SEEN_KEY = 'podshar:patches-seen';
 
-export function PatchesRow() {
+function markSeen() {
+  try {
+    window.localStorage.setItem(SEEN_KEY, CURRENT_VERSION);
+  } catch {
+    // Blocked site data. The dot stays; nothing else breaks.
+  }
+}
+
+export function PatchesRow({ onOpen }: { onOpen?: () => void }) {
   const t = useTranslations('home');
 
   // No dot on the first frame, whatever this device remembers. The server
@@ -36,24 +43,18 @@ export function PatchesRow() {
     try {
       setUnread(window.localStorage.getItem(SEEN_KEY) !== CURRENT_VERSION);
     } catch {
-      // Blocked site data throws rather than returning null. No dot is a
-      // better failure than a drawer that does not render.
+      // See above.
     }
   }, []);
 
-  return (
-    <Link
-      href="/patches"
-      className="ps-rule flex items-center gap-3 px-5 py-3 transition-colors duration-drape ease-drape hover:bg-sunk"
-    >
+  const body = (
+    <>
       <span className="text-sm font-semibold tabular-nums text-ink">v{CURRENT_VERSION}</span>
-      <span className="ps-label flex-1">{t('patchesLabel')}</span>
+      <span className="ps-label flex-1 text-left">{t('patchesLabel')}</span>
       {unread ? (
-        <span
-          // Announced rather than drawn twice: a screen reader gets the words,
-          // everyone else gets the dot.
-          className="flex items-center gap-2"
-        >
+        <span className="flex items-center gap-2">
+          {/* Announced rather than drawn twice: a screen reader gets the words,
+              everyone else gets the dot. */}
           <span className="sr-only">{t('patchesNew')}</span>
           <span
             aria-hidden="true"
@@ -61,23 +62,46 @@ export function PatchesRow() {
           />
         </span>
       ) : null}
-    </Link>
+    </>
+  );
+
+  const shared =
+    'ps-rule flex w-full items-center gap-3 px-5 py-3 transition-colors duration-drape ease-drape hover:bg-sunk';
+
+  // A panel when the shell can show one, a link to the page when it cannot.
+  // The page is not a fallback for the sake of it: it is what a shared link
+  // opens, what a reload lands on, and where the dog walks you when asked.
+  if (!onOpen) {
+    return (
+      <Link href="/patches" className={shared} onClick={markSeen}>
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className={shared}
+      onClick={() => {
+        markSeen();
+        // The dot goes now rather than on the next mount: opening the list is
+        // reading it, and a dot still burning behind the panel you are reading
+        // is the site arguing with itself.
+        setUnread(false);
+        onOpen();
+      }}
+    >
+      {body}
+    </button>
   );
 }
 
 /**
- * Marks this device as having read the list. Rendered by the patches page
- * itself, because opening the page is what "read" means — marking it on the
- * click would clear the dot for someone who changed their mind on the way.
+ * Marks this device as having read the list, from the patches page itself —
+ * the route the dog uses, and the one a shared link opens.
  */
 export function PatchesSeen() {
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(SEEN_KEY, CURRENT_VERSION);
-    } catch {
-      // Then the dot stays. Harmless, and better than a page that throws.
-    }
-  }, []);
-
+  useEffect(markSeen, []);
   return null;
 }

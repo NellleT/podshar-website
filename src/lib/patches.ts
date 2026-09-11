@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.21',
+    date: '2026-09-12',
+    author: 'trqwaa',
+    note: 'патчи открываются окошком поверх страницы, а не отдельной вкладкой'
+  },
+  {
     version: '0.20',
     date: '2026-09-12',
     author: 'trqwaa',

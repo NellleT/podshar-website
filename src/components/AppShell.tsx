@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 import { LeftSidebar } from './LeftSidebar';
+import { Modal } from './Modal';
 import { RightAIChat } from './RightAIChat';
 import { PodsharWordmark } from './PodsharMark';
 import type { MemberProfile, QuickStats } from '@/lib/types';
@@ -31,15 +32,37 @@ import type { MemberProfile, QuickStats } from '@/lib/types';
 export function AppShell({
   profile,
   stats,
-  children
+  children,
+  patches
 }: {
   profile: MemberProfile;
   stats: QuickStats;
   children: React.ReactNode;
+  /**
+   * The patch list, rendered on the server upstairs and shown here in a panel.
+   * It arrives as a prop rather than being fetched on demand because turning
+   * handles into names needs the database, and a dialog that opens on a
+   * spinner is not the quick glance this is meant to be.
+   */
+  patches?: React.ReactNode;
 }) {
   const t = useTranslations('home');
+  const tPatches = useTranslations('patches');
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
+
+  /**
+   * The patch list, as a panel over whatever you were reading.
+   *
+   * This was briefly a Next intercepting route, which is the textbook way to
+   * give a panel its own address. It broke the client router outright —
+   * `initialTree is not iterable` on every navigation — somewhere in the
+   * crossing of a dynamic `[locale]`, a route group and next-intl's navigation.
+   * A dialog in state does the same job for the reader, and `/patches` is still
+   * a real page for a link sent to somebody else, for a reload, and for the dog
+   * to walk you to.
+   */
+  const [patchesOpen, setPatchesOpen] = useState(false);
 
   // Everything except the homepage is one level down, so "back" and "home" are
   // the same journey. That is why this is a link to `/` and not `router.back()`:
@@ -50,6 +73,7 @@ export function AppShell({
   // A tap-through should not leave the drawer standing open behind the page.
   useEffect(() => {
     setNavOpen(false);
+    setPatchesOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -63,7 +87,12 @@ export function AppShell({
 
   return (
     <div className="flex min-h-dvh overflow-x-clip bg-canvas">
-      <LeftSidebar open={navOpen} profile={profile} stats={stats} />
+      <LeftSidebar
+        open={navOpen}
+        profile={profile}
+        stats={stats}
+        onOpenPatches={patches ? () => setPatchesOpen(true) : undefined}
+      />
 
       <div className="flex min-w-full flex-1 flex-col lg:min-w-0">
         {/* Top bar. The trigger lives in the flow, so the push carries it.
@@ -172,6 +201,19 @@ export function AppShell({
       </div>
 
       <RightAIChat />
+
+      {/* Last, and over everything: the dog is fixed at z-50 and a panel that
+          slid under him would be a panel you cannot fully read. */}
+      {patchesOpen && patches ? (
+        <Modal
+          title={tPatches('title')}
+          hint={tPatches('hint')}
+          close={t('close')}
+          onClose={() => setPatchesOpen(false)}
+        >
+          {patches}
+        </Modal>
+      ) : null}
     </div>
   );
 }

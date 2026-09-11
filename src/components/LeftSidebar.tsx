@@ -36,11 +36,14 @@ import type { MemberProfile, QuickStats } from '@/lib/types';
 export function LeftSidebar({
   open,
   profile,
-  stats
+  stats,
+  onOpenPatches
 }: {
   open: boolean;
   profile: MemberProfile;
   stats: QuickStats;
+  /** Opens the patch list as a panel. Absent means fall back to the page. */
+  onOpenPatches?: () => void;
 }) {
   const t = useTranslations('sidebar');
   const tHome = useTranslations('home');
@@ -150,7 +153,7 @@ export function LeftSidebar({
         {/* Which version of the site you are looking at, and whether there
             is anything new in it. Above the footer rather than in it: the
             footer is controls, and this is a fact with a link on it. */}
-        <PatchesRow />
+        <PatchesRow onOpen={onOpenPatches} />
 
         <footer className="flex items-center justify-between border-t border-rule-soft px-5 py-3">
           <LocaleSwitcher />

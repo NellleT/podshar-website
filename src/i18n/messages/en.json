@@ -69,7 +69,8 @@
     "goBack": "back to the homepage",
     "quoteHint": "crack it open",
     "quoteReveal": "show the quote of the day",
-    "patchesNew": "something new"
+    "patchesNew": "something new",
+    "close": "close"
   },
   "patches": {
     "title": "Patches",

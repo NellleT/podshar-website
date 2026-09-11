@@ -69,7 +69,8 @@
     "goBack": "zurück zur startseite",
     "quoteHint": "aufbrechen",
     "quoteReveal": "den spruch des tages zeigen",
-    "patchesNew": "etwas neues"
+    "patchesNew": "etwas neues",
+    "close": "schliessen"
   },
   "patches": {
     "title": "Patches",

@@ -69,7 +69,8 @@
     "goBack": "назад, на главную",
     "quoteHint": "разломить",
     "quoteReveal": "показать цитату дня",
-    "patchesNew": "есть новое"
+    "patchesNew": "есть новое",
+    "close": "закрыть"
   },
   "patches": {
     "title": "Патчи",
