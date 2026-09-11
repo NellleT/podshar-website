@@ -57,7 +57,6 @@
     "memberLabel": "wer ist das",
     "quoteLabel": "gedanke des tages",
     "patchesLabel": "was neu ist",
-    "patchesAll": "alle patches",
     "pressCount": "{count} mal gedrückt. immer noch nichts",
     "press": {
       "1": "ernsthaft?",
@@ -69,7 +68,8 @@
     },
     "goBack": "zurück zur startseite",
     "quoteHint": "aufbrechen",
-    "quoteReveal": "den spruch des tages zeigen"
+    "quoteReveal": "den spruch des tages zeigen",
+    "patchesNew": "etwas neues"
   },
   "patches": {
     "title": "Patches",

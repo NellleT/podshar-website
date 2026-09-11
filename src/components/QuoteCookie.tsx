@@ -123,7 +123,7 @@ export function QuoteCookie({
           type="button"
           onClick={breakOpen}
           aria-label={reveal}
-          className="group absolute inset-0 grid place-items-center focus-visible:outline-none"
+          className="group absolute inset-0 grid place-items-center"
         >
           {/* Dots over the blur. A blur on its own reads as a page that failed
               to render; a texture over it reads as something covered up. */}
@@ -136,7 +136,12 @@ export function QuoteCookie({
               backgroundSize: '7px 7px'
             }}
           />
-          <span className="ps-label relative rounded-full border-2 border-rule bg-canvas px-4 py-2 text-ink shadow-sm transition-transform duration-drape ease-drape group-hover:scale-105 group-focus-visible:ring-2 group-focus-visible:ring-ink">
+          {/* The site's own label, not a button glued on top. A bordered pill
+              with a shadow exists nowhere else here — the reactor's own hint is
+              exactly this: small, lowercase, muted, floating over the thing it
+              describes. Focus is left to the global outline rather than a ring
+              of its own, for the same reason. */}
+          <span className="ps-label relative opacity-80 transition-opacity duration-drape ease-drape group-hover:opacity-100">
             {hint}
           </span>
         </button>

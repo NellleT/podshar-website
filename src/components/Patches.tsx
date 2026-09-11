@@ -1,7 +1,4 @@
-import { getTranslations } from 'next-intl/server';
-
-import { Link } from '@/i18n/routing';
-import { CURRENT_VERSION, PATCHES } from '@/lib/patches';
+import { PATCHES } from '@/lib/patches';
 import { getMemberNames } from '@/lib/session';
 import type { Locale } from '@/i18n/routing';
 
@@ -16,47 +13,6 @@ function formatter(locale: Locale) {
     month: 'short',
     timeZone: 'UTC'
   });
-}
-
-/**
- * Кнопка на главной: номер текущей версии, последняя строка и стрелка на
- * страницу со всем списком.
- *
- * Раньше список целиком лежал на главной. Пятнадцать строк в прокручиваемом
- * окошке — это уже не блок бенто, а страница, зажатая в блок: читать неудобно,
- * а места занимает как реактор. Кнопка говорит ровно то, ради чего на неё
- * смотрят с главной — «что-то поменялось, вот последнее» — и уводит туда, где
- * список можно нормально листать.
- */
-export async function PatchesCard() {
-  const t = await getTranslations('home');
-  const latest = PATCHES[0];
-
-  return (
-    <Link
-      href="/patches"
-      className="block-card animate-rise-in group flex flex-col gap-3 p-6 transition-colors duration-drape ease-drape [animation-delay:300ms] hover:bg-sunk sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-10 md:col-span-6"
-    >
-      <div className="min-w-0">
-        <p className="ps-label">{t('patchesLabel')}</p>
-        <p className="mt-1 truncate text-base text-ink sm:text-lg">{latest.note}</p>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-3">
-        <span className="text-base font-semibold tabular-nums text-ink">
-          v{CURRENT_VERSION}
-        </span>
-        <span className="ps-label">{t('patchesAll')}</span>
-        {/* Стрелка декоративная: ссылку уже называет текст внутри неё. */}
-        <span
-          aria-hidden="true"
-          className="text-base text-ink-faint transition-transform duration-drape ease-drape group-hover:translate-x-0.5"
-        >
-          &rarr;
-        </span>
-      </div>
-    </Link>
-  );
 }
 
 /**

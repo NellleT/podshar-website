@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { PatchList } from '@/components/Patches';
+import { PatchesSeen } from '@/components/PatchesRow';
 import { CURRENT_VERSION } from '@/lib/patches';
 import { resolveLocale } from '@/lib/locale';
 
@@ -47,6 +48,10 @@ export default async function PatchesPage({
         </header>
 
         <PatchList locale={locale} />
+
+        {/* Opening this page is what "read" means, so the dot in the drawer
+            clears here rather than on the click that got you here. */}
+        <PatchesSeen />
       </section>
     </div>
   );

@@ -4,7 +4,6 @@ import { Greeting } from '@/components/Greeting';
 import { MemberAvatar } from '@/components/profile/MemberAvatar';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
-import { PatchesCard } from '@/components/Patches';
 import { QuoteCookie } from '@/components/QuoteCookie';
 import { getCurrentMember } from '@/lib/session';
 import { sharedDayIndex } from '@/lib/day';
@@ -109,10 +108,6 @@ export default async function HomePage({
         day={day}
       />
 
-      {/* Что менялось на сайте — одной строкой и ссылкой. Внизу намеренно: это
-          единственный блок, который читают не каждый день, и место под цитатой
-          — ровно та высота, до которой доходят, посмотрев всё остальное. */}
-      <PatchesCard />
     </div>
   );
 }

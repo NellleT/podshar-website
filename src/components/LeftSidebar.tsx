@@ -7,6 +7,7 @@ import { Link } from '@/i18n/routing';
 import { MemberAvatar } from './profile/MemberAvatar';
 import { PodsharWordmark } from './PodsharMark';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { PatchesRow } from './PatchesRow';
 import { SignOutButton } from './auth/SignOutButton';
 import type { MemberProfile, QuickStats } from '@/lib/types';
 
@@ -145,6 +146,11 @@ export function LeftSidebar({
             </ul>
           </nav>
         </div>
+
+        {/* Which version of the site you are looking at, and whether there
+            is anything new in it. Above the footer rather than in it: the
+            footer is controls, and this is a fact with a link on it. */}
+        <PatchesRow />
 
         <footer className="flex items-center justify-between border-t border-rule-soft px-5 py-3">
           <LocaleSwitcher />

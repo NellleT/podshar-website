@@ -57,7 +57,6 @@
     "memberLabel": "хто це взагалі",
     "quoteLabel": "думка дня",
     "patchesLabel": "що нового",
-    "patchesAll": "всі патчі",
     "pressCount": "натиснуто {count}. нічого не відбувається",
     "press": {
       "1": "серйозно?",
@@ -69,7 +68,8 @@
     },
     "goBack": "назад, на головну",
     "quoteHint": "розламати",
-    "quoteReveal": "показати цитату дня"
+    "quoteReveal": "показати цитату дня",
+    "patchesNew": "є нове"
   },
   "patches": {
     "title": "Патчі",

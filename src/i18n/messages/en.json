@@ -57,7 +57,6 @@
     "memberLabel": "who is this",
     "quoteLabel": "thought of the day",
     "patchesLabel": "what changed",
-    "patchesAll": "all patches",
     "pressCount": "{count} presses. still nothing",
     "press": {
       "1": "really?",
@@ -69,7 +68,8 @@
     },
     "goBack": "back to the homepage",
     "quoteHint": "crack it open",
-    "quoteReveal": "show the quote of the day"
+    "quoteReveal": "show the quote of the day",
+    "patchesNew": "something new"
   },
   "patches": {
     "title": "Patches",

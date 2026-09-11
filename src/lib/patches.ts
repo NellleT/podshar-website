@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.20',
+    date: '2026-09-12',
+    author: 'trqwaa',
+    note: 'патчи переехали в шторку — версия сайта и точка, когда есть что почитать'
+  },
+  {
     version: '0.19',
     date: '2026-09-12',
     author: 'trqwaa',
