@@ -67,7 +67,9 @@
       "5": "okay, mach ruhig weiter",
       "6": "der knopf ist müde. du nicht"
     },
-    "goBack": "zurück zur startseite"
+    "goBack": "zurück zur startseite",
+    "quoteHint": "aufbrechen",
+    "quoteReveal": "den spruch des tages zeigen"
   },
   "patches": {
     "title": "Patches",

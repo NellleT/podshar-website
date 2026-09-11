@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.19',
+    date: '2026-09-12',
+    author: 'trqwaa',
+    note: 'мысль дня теперь печенье с предсказанием: блок закрыт, пока не разломишь'
+  },
+  {
     version: '0.18',
     date: '2026-09-10',
     author: 'trqwaa',

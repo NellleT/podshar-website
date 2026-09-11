@@ -5,6 +5,7 @@ import { MemberAvatar } from '@/components/profile/MemberAvatar';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
 import { PatchesCard } from '@/components/Patches';
+import { QuoteCookie } from '@/components/QuoteCookie';
 import { getCurrentMember } from '@/lib/session';
 import { sharedDayIndex } from '@/lib/day';
 import { resolveLocale } from '@/lib/locale';
@@ -98,21 +99,15 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* Quote of the day. The one place on the page allowed to have a voice. */}
-      <section className="block-card animate-rise-in relative flex flex-col gap-3 px-6 py-8 [animation-delay:240ms] sm:px-10 md:col-span-6">
-        <p className="ps-label">{t('quoteLabel')}</p>
-        <p className="max-w-3xl text-xl font-medium leading-snug text-ink sm:text-2xl">
-          {quote}
-        </p>
-        {/* A sticker, stuck on slightly crooked, because a straight one would
-            just be another label. */}
-        <span
-          aria-hidden="true"
-          className="absolute right-4 top-4 -rotate-6 rounded-sm border-2 border-ink bg-reactor px-2 py-1 text-[0.6875rem] font-bold uppercase tracking-wide text-white sm:right-6"
-        >
-          ПХ™
-        </span>
-      </section>
+      {/* Quote of the day. The one place on the page allowed to have a voice,
+          and the only block you have to open before it will speak. */}
+      <QuoteCookie
+        label={t('quoteLabel')}
+        quote={quote}
+        hint={t('quoteHint')}
+        reveal={t('quoteReveal')}
+        day={day}
+      />
 
       {/* Что менялось на сайте — одной строкой и ссылкой. Внизу намеренно: это
           единственный блок, который читают не каждый день, и место под цитатой

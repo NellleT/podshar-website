@@ -67,7 +67,9 @@
       "5": "fine. keep going",
       "6": "the button is tired. you are not"
     },
-    "goBack": "back to the homepage"
+    "goBack": "back to the homepage",
+    "quoteHint": "crack it open",
+    "quoteReveal": "show the quote of the day"
   },
   "patches": {
     "title": "Patches",
