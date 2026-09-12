@@ -81,7 +81,14 @@ export function Modal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-8">
       {/* The page behind, blurred and dimmed. A button rather than a div, so
           clicking away is reachable by keyboard and announced as what it does
-          instead of being a silent trap for anyone not using a mouse. */}
+          instead of being a silent trap for anyone not using a mouse.
+
+          `touch-none`, because a phone does not reliably honour the scroll
+          lock above: Safari on an iPhone has a long record of ignoring
+          `overflow: hidden` on the body, so a finger dragged across the dimmed
+          page scrolled the homepage behind the panel. Refusing the gesture on
+          the backdrop itself works everywhere. The panel keeps its own scroll,
+          and `overscroll-contain` stops that one leaking out at the ends. */}
       <motion.button
         type="button"
         aria-label={close}
@@ -90,7 +97,7 @@ export function Modal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="fixed inset-0 cursor-default bg-ink/25 backdrop-blur-[3px]"
+        className="fixed inset-0 cursor-default touch-none bg-ink/25 backdrop-blur-[3px]"
       />
 
       <motion.div

@@ -137,7 +137,9 @@ export function AssistantLauncher({
       // tab order, so without this the keyboard lands on an invisible launcher
       // sitting on top of an open chat panel.
       inert={hidden}
-      className="pointer-events-none fixed inset-4 z-50"
+      // The bottom margin grows into the home-indicator strip on an iPhone
+      // running the site from its home screen, and is the plain 1rem elsewhere.
+      className="pointer-events-none fixed inset-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-50"
     >
       <motion.div
         drag
@@ -182,7 +184,13 @@ export function AssistantLauncher({
                 persist({ collapsed: true });
               }}
               aria-label={t('collapse')}
-              className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full border border-rule bg-surface text-xs leading-none text-ink-muted opacity-70 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+              // Drawn at 20px, pressed at 32. A thumb is not a cursor, and a
+              // 20px target is easy to miss. The `before` layer is an invisible
+              // margin that grows only up and to the right — away from the dog.
+              // This button sits on his shoulder, so a margin grown every way
+              // took the whole upper-right quarter of his face, and a thumb
+              // aimed at the dog shrank him instead of opening the chat.
+              className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full border border-rule bg-surface text-xs leading-none text-ink-muted opacity-70 transition-opacity before:absolute before:-right-3 before:-top-3 before:bottom-0 before:left-0 before:content-[''] hover:opacity-100 focus-visible:opacity-100"
             >
               &#8722;
             </button>

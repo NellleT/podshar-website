@@ -34,7 +34,8 @@ export function AppShell({
   profile,
   stats,
   children,
-  patches
+  patches,
+  telegram
 }: {
   profile: MemberProfile;
   stats: QuickStats;
@@ -46,6 +47,8 @@ export function AppShell({
    * spinner is not the quick glance this is meant to be.
    */
   patches?: React.ReactNode;
+  /** The group's Telegram invite for the footer, or nothing — see the (app) layout. */
+  telegram?: string;
 }) {
   const t = useTranslations('home');
   const tPatches = useTranslations('patches');
@@ -192,7 +195,9 @@ export function AppShell({
           <Link
             href="/"
             aria-label={t('goHome')}
-            className="rounded px-2 py-1 transition-colors duration-drape ease-drape hover:bg-sunk"
+            // 44px tall, the height a thumb needs. The bar is already that
+            // tall because of the switch beside it, so this costs no layout.
+            className="inline-flex min-h-11 items-center rounded px-2 transition-colors duration-drape ease-drape hover:bg-sunk"
           >
             <PodsharWordmark className="text-xs font-semibold text-ink-muted" />
           </Link>
@@ -227,11 +232,51 @@ export function AppShell({
             day go in it. Nobody knows what that is, so rather than reserve the
             space with an apology it says the one thing about this site that is
             certain and worth reading. A band the page ends with, edge to edge
-            with a rule on top; the heart is the only colour down here. */}
-        <footer className="mt-2 border-t border-rule-soft px-4 py-10 text-center">
+            with a rule on top; the heart is the only colour down here.
+
+            Under it, the group chat — which is where these three actually
+            live; this site is the part of it that got an address. The link
+            comes down from the server (the (app) layout says why it is not
+            written in the code), so without it the icon is simply not drawn.
+            The heart is held to the last word with a no-break space, because
+            on a phone the line wraps and a heart alone on a line is a typo. */}
+        <footer className="mt-2 flex flex-col items-center gap-4 border-t border-rule-soft px-4 py-10 text-center">
           <p className="ps-label">
-            {t('footerLove')} <span className="text-reactor">&#9829;</span>
+            {t('footerLove')}&nbsp;<span className="text-reactor">&#9829;</span>
           </p>
+          {telegram ? (
+            <a
+              href={telegram}
+              target="_blank"
+              // `noreferrer` as well as `noopener`: the address of a private
+              // site has no business arriving at Telegram in a Referer header.
+              rel="noopener noreferrer"
+              aria-label={t('footerTelegram')}
+              title={t('footerTelegram')}
+              className="grid h-11 w-11 place-items-center rounded-full text-ink-muted transition-colors duration-drape ease-drape hover:bg-sunk hover:text-accent"
+            >
+              {/* Telegram's paper plane in a ring, in the site's own ink. Not
+                  Telegram blue: a brand colour would be the one raw hex in
+                  the codebase that no token describes, and the palette stays
+                  this small only because nothing gets one. The shape is what
+                  people recognise. Hover borrows the accent, the one colour
+                  here that already means "press". */}
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M16.9 7.6 6.4 11.7l3.9 1.4 5 3.5z" />
+                <path d="m16.9 7.6-6.6 5.5.5 3.2 1.8-1.7" />
+              </svg>
+            </a>
+          ) : null}
         </footer>
       </div>
 

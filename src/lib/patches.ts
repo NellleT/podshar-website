@@ -56,6 +56,18 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.31',
+    date: '2026-09-12',
+    author: 'nellet',
+    note: 'телефон: страница больше не ездит вбок, а тап в поле не зумит экран'
+  },
+  {
+    version: '0.30',
+    date: '2026-09-12',
+    author: 'nellet',
+    note: 'в подвале — три милых ублюдка и иконка нашей группы в телеграме'
+  },
+  {
     version: '0.29',
     date: '2026-09-13',
     author: 'trqwaa',

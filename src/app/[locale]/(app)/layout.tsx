@@ -47,8 +47,26 @@ export default async function AppLayout({
       profile={profile}
       stats={stats}
       patches={<PatchList locale={locale} />}
+      telegram={telegramInvite()}
     >
       {children}
     </AppShell>
   );
+}
+
+/**
+ * The group's Telegram invite, for the icon in the footer — or nothing.
+ *
+ * From the environment and not from the code, because this repository is
+ * public: an invite written here is a way into the group for anyone who reads
+ * GitHub. Read on the server and handed down as a prop, so the address only
+ * ever travels inside a signed-in page, never inside a script file that anybody
+ * could fetch.
+ *
+ * Only a t.me address counts. A mistyped variable should make the icon quietly
+ * disappear, not turn it into a link to wherever the typo happens to point.
+ */
+function telegramInvite(): string | undefined {
+  const url = process.env.TELEGRAM_INVITE_URL?.trim();
+  return url && /^https:\/\/t\.me\/\S+$/.test(url) ? url : undefined;
 }

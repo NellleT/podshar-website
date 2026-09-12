@@ -99,6 +99,9 @@ export function Field({
   return (
     <label className="flex flex-col gap-2">
       <span className="ps-label">{label}</span>
+      {/* 16px on a phone, 15 from `sm` up. Below 16, Safari on an iPhone zooms
+          the whole page in the moment the field is tapped and leaves it zoomed
+          — after which the page can be dragged sideways. */}
       <input
         name={name}
         type={type}
@@ -106,7 +109,7 @@ export function Field({
         defaultValue={defaultValue}
         required={required}
         readOnly={readOnly}
-        className="rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[0.9375rem] text-ink outline-none transition-colors focus:border-ink read-only:text-ink-muted placeholder:text-ink-faint"
+        className="rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[1rem] text-ink outline-none transition-colors focus:border-ink read-only:text-ink-muted placeholder:text-ink-faint sm:text-[0.9375rem]"
       />
     </label>
   );

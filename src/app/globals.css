@@ -47,6 +47,18 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    /* Nothing on this site is meant to be scrolled sideways, and on a phone
+       something is always parked past the right edge: the closed assistant
+       panel waiting off-screen, a released chat window dragged half out of
+       view. Chrome ignores those; Safari lets the whole page pan towards them.
+
+       On `html` and nowhere else. The root element hands its overflow to the
+       viewport, so the page still scrolls up and down exactly as before and
+       nothing new becomes a scroll container. The same line on `body` as well
+       would make *body* the scroll container — one that never scrolls — and
+       the sticky top bar, which sticks to its nearest scroll container, would
+       quietly stop sticking. */
+    overflow-x: hidden;
   }
 
   body {

@@ -86,12 +86,14 @@ export function LeftSidebar({
             goes, and the panel is closed from the same place it was opened. */}
         <header className="flex items-center border-b border-rule-soft px-5 py-4">
           {/* Same as the one in the top bar — see the note in AppShell. The
-              negative margin pulls the hover surface back under the header
-              padding so the letters stay on the same line as everything else. */}
+              negative margins pull the hover surface back under the header
+              padding: sideways so the letters stay on the same line as
+              everything else, and vertically so the 44px a thumb needs does
+              not make the header 12px taller than it was. */}
           <Link
             href="/"
             aria-label={tHome('goHome')}
-            className="-ms-2 rounded px-2 py-1 transition-colors duration-drape ease-drape hover:bg-sunk"
+            className="-my-1.5 -ms-2 inline-flex min-h-11 items-center rounded px-2 transition-colors duration-drape ease-drape hover:bg-sunk"
           >
             <PodsharWordmark className="text-xs font-semibold text-ink" />
           </Link>
@@ -155,7 +157,10 @@ export function LeftSidebar({
             footer is controls, and this is a fact with a link on it. */}
         <PatchesRow onOpen={onOpenPatches} />
 
-        <footer className="flex items-center justify-between border-t border-rule-soft px-5 py-3">
+        {/* The bottom padding grows into the home-indicator strip on an iPhone
+            running the site from its home screen: the drawer is a full viewport
+            tall, so its footer sits exactly there. Zero inset everywhere else. */}
+        <footer className="flex items-center justify-between border-t border-rule-soft px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <LocaleSwitcher />
           <SignOutButton />
         </footer>

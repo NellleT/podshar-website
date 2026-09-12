@@ -408,7 +408,14 @@ export function RightAIChat() {
       <motion.div
         ref={wrapRef}
         style={{ x, y }}
-        className={`pointer-events-none fixed z-50 ${
+        // `overflow-clip`. Docked and shut, the panel waits a whole panel's
+        // width past the right edge of the screen. Chrome ignores anything
+        // parked there; Safari on a phone let the page be dragged sideways
+        // towards it. Clipped by its own wrapper it still slides in from the
+        // edge exactly as before, and past the edge it simply is not there.
+        // `clip` rather than `hidden`: `hidden` makes a scroll container, and
+        // focusing the field mid-slide would then scroll the panel inside it.
+        className={`pointer-events-none fixed z-50 overflow-clip ${
           dragging ? '' : 'transition-[top,right,width,height] duration-drape ease-drape'
         } ${
           free
@@ -663,7 +670,16 @@ function ChatBody({
 
       {/* `items-end` so the button stays on the last line as the field grows,
           rather than floating in the middle of a four-line message. */}
-      <form onSubmit={send} className="flex items-end gap-2 border-t border-rule-soft p-3">
+      <form
+        onSubmit={send}
+        // Docked, the form sits on the bottom edge of the screen — which, on an
+        // iPhone running the site from its home screen, is where the home
+        // indicator lives. The inset is zero everywhere else, and a released
+        // window is nowhere near that edge, so it does not take it.
+        className={`flex items-end gap-2 border-t border-rule-soft p-3 ${
+          free ? '' : 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'
+        }`}
+      >
         <textarea
           ref={fieldRef}
           value={input}
@@ -681,7 +697,11 @@ function ChatBody({
           rows={1}
           placeholder={t('placeholder')}
           aria-label={t('placeholder')}
-          className="min-w-0 flex-1 resize-none overflow-y-auto rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[0.9375rem] leading-relaxed text-ink outline-none transition-colors focus:border-ink placeholder:text-ink-faint"
+          // 16px on a phone, 15 from `sm` up. Under 16, Safari on an iPhone
+          // zooms the whole page in the moment the field is tapped and leaves
+          // it zoomed — after which the page drags sideways. The one-row height
+          // above is measured from the live line-height, so it follows along.
+          className="min-w-0 flex-1 resize-none overflow-y-auto rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[1rem] leading-relaxed text-ink outline-none transition-colors focus:border-ink placeholder:text-ink-faint sm:text-[0.9375rem]"
         />
         <button
           type="submit"

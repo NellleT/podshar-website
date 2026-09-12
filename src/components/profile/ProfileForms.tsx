@@ -64,15 +64,18 @@ function Field({
   return (
     <label className="flex flex-col gap-2">
       <span className="ps-label">{label}</span>
+      {/* 16px on a phone, 15 from `sm` up — under 16, an iPhone zooms the page
+          in on tap and leaves it zoomed and draggable sideways. The `@` is
+          sized with the field so the two stay on one baseline. */}
       <span className="flex items-center gap-1 rounded border-2 border-rule bg-canvas px-3 transition-colors focus-within:border-ink">
-        {prefix ? <span className="text-[0.9375rem] text-ink-faint">{prefix}</span> : null}
+        {prefix ? <span className="text-[1rem] text-ink-faint sm:text-[0.9375rem]">{prefix}</span> : null}
         <input
           name={name}
           type={type}
           defaultValue={defaultValue}
           autoComplete={autoComplete}
           required={required}
-          className="min-w-0 flex-1 bg-transparent py-2.5 text-[0.9375rem] text-ink outline-none placeholder:text-ink-faint"
+          className="min-w-0 flex-1 bg-transparent py-2.5 text-[1rem] text-ink outline-none placeholder:text-ink-faint sm:text-[0.9375rem]"
         />
       </span>
     </label>
@@ -207,7 +210,9 @@ export function IdentityForm({
             <select
               name="locale"
               defaultValue={member.locale}
-              className="rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[0.9375rem] text-ink outline-none transition-colors focus:border-ink"
+              // 16px on a phone for the same reason as the fields: a smaller
+              // select zooms an iPhone in on tap and leaves it zoomed.
+              className="rounded border-2 border-rule bg-canvas px-3 py-2.5 text-[1rem] text-ink outline-none transition-colors focus:border-ink sm:text-[0.9375rem]"
             >
               {routing.locales.map((l) => (
                 <option key={l} value={l}>
