@@ -59,11 +59,24 @@ export function Modal({
 
     // The page underneath must not scroll while a panel is over it — otherwise
     // a flick on a phone moves the homepage behind the thing being read.
+    //
+    // Locked on `html`, not on `body`. `html` carries an `overflow-x` of its
+    // own (see globals.css), and once the root has an overflow of its own the
+    // body's is no longer handed to the viewport: `overflow: hidden` on the body
+    // then only made the body a scroll container that never scrolls. The page
+    // behind kept turning under the wheel, and the drawer and the top bar —
+    // which stick to their nearest scroll container — stuck to that body
+    // instead of the screen and flew to the top of the document. On the root it
+    // does what it says.
+    //
     // Padding replaces the scrollbar's width so the layout does not jump on
-    // desktops that reserve space for one.
-    const gap = window.innerWidth - document.documentElement.clientWidth;
-    const { overflow, paddingRight } = document.body.style;
-    document.body.style.overflow = 'hidden';
+    // desktops that reserve space for one — which also keeps the page behind at
+    // the same width, so nothing under the panel has to lay itself out again.
+    const root = document.documentElement;
+    const gap = window.innerWidth - root.clientWidth;
+    const overflow = root.style.overflow;
+    const { paddingRight } = document.body.style;
+    root.style.overflow = 'hidden';
     if (gap > 0) document.body.style.paddingRight = `${gap}px`;
 
     // Focus goes to the panel, not to the close button: the first thing a
@@ -72,7 +85,7 @@ export function Modal({
 
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = overflow;
+      root.style.overflow = overflow;
       document.body.style.paddingRight = paddingRight;
     };
   }, []);
@@ -85,10 +98,11 @@ export function Modal({
 
           `touch-none`, because a phone does not reliably honour the scroll
           lock above: Safari on an iPhone has a long record of ignoring
-          `overflow: hidden` on the body, so a finger dragged across the dimmed
-          page scrolled the homepage behind the panel. Refusing the gesture on
-          the backdrop itself works everywhere. The panel keeps its own scroll,
-          and `overscroll-contain` stops that one leaking out at the ends. */}
+          `overflow: hidden` when it comes to a finger, so a drag across the
+          dimmed page could scroll the homepage behind the panel. Refusing the
+          gesture on the backdrop itself works everywhere. The panel keeps its
+          own scroll, and `overscroll-contain` stops that one leaking out at the
+          ends. */}
       <motion.button
         type="button"
         aria-label={close}

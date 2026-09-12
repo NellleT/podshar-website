@@ -72,7 +72,27 @@
     "patchesNew": "something new",
     "close": "close",
     "footerLove": "made with love by three lovely bastards",
-    "footerTelegram": "our Telegram group"
+    "footerTelegram": "our Telegram group",
+    "footerRights": "© 2026 podshar · all rights ridiculed, bastards reserved"
+  },
+  "weather": {
+    "label": "weather",
+    "place": "zurich",
+    "feels": "feels like {temp}°",
+    "rain": "precipitation {chance}%",
+    "unavailable": "no weather came through. try the window",
+    "conditions": {
+      "clear": "clear",
+      "clearNight": "clear night",
+      "partly": "partly cloudy",
+      "cloudy": "overcast",
+      "fog": "fog",
+      "drizzle": "drizzle",
+      "rain": "rain",
+      "snow": "snow",
+      "showers": "showers",
+      "thunder": "thunderstorm"
+    }
   },
   "patches": {
     "title": "Patches",

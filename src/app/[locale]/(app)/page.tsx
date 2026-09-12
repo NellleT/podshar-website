@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 
 import { Greeting } from '@/components/Greeting';
@@ -5,6 +6,7 @@ import { MemberAvatar } from '@/components/profile/MemberAvatar';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
 import { QuoteCookie } from '@/components/QuoteCookie';
+import { WeatherPending, WeatherTile } from '@/components/WeatherTile';
 import { getCurrentMember } from '@/lib/session';
 import { sharedDayIndex } from '@/lib/day';
 import { resolveLocale } from '@/lib/locale';
@@ -16,9 +18,16 @@ const QUOTE_COUNT = 8;
  * The homepage as a bento grid.
  *
  * Six columns. The greeting spans all of them; the reactor takes a wide block
- * that is two rows tall, and the two meta blocks stack beside it to match its
- * height. The quote runs full width underneath. Deliberately varied block sizes
- * — an even three-across row of equal thirds reads as a table, not a bento.
+ * that is three rows tall, and the three small blocks — the date, the weather
+ * and who you are — stack beside it to match its height. The quote runs full
+ * width underneath. Deliberately varied block sizes — an even three-across row
+ * of equal thirds reads as a table, not a bento.
+ *
+ * Three beside the reactor, not two. With two, the reactor's height was shared
+ * out between the date and the profile, and both stood mostly empty: a label,
+ * a value, and a hand's width of nothing under it. The weather fills that
+ * column with something that changes during the day, which a page opened
+ * several times a day needs more than it needs the whitespace.
  *
  * Row heights are `auto`, never `1fr`: letting a row absorb the viewport leaves
  * the small blocks cavernous, with a label stranded at the top and a value at
@@ -31,9 +40,10 @@ export default async function HomePage({
 }) {
   const locale = resolveLocale((await params).locale);
 
-  const [t, tQuote, member] = await Promise.all([
+  const [t, tQuote, tWeather, member] = await Promise.all([
     getTranslations('home'),
     getTranslations('quotes'),
+    getTranslations('weather'),
     getCurrentMember()
   ]);
 
@@ -55,8 +65,8 @@ export default async function HomePage({
         <Greeting name={member.displayName.split(' ')[0]} day={day} />
       </section>
 
-      {/* The reactor — the dominant block */}
-      <section className="block-card animate-rise-in flex items-center justify-center bg-sunk px-4 py-10 [animation-delay:60ms] md:col-span-4 md:row-span-2">
+      {/* The reactor — the dominant block, as tall as the three beside it */}
+      <section className="block-card animate-rise-in flex items-center justify-center bg-sunk px-4 py-10 [animation-delay:60ms] md:col-span-4 md:row-span-3">
         <PHButton />
       </section>
 
@@ -79,6 +89,21 @@ export default async function HomePage({
           <LocalClock />
         </div>
       </section>
+
+      {/* The weather, shared like the date — the sky over Zurich, not over
+          whoever is looking. It streams in: the page does not wait for the
+          provider, and the placeholder holds the same frame, so nothing below
+          it moves when the answer lands. */}
+      <Suspense
+        fallback={
+          <WeatherPending
+            label={`${tWeather('label')} · ${tWeather('place')}`}
+            className="md:col-span-2"
+          />
+        }
+      >
+        <WeatherTile className="md:col-span-2" />
+      </Suspense>
 
       {/* Identity */}
       <section className="block-card animate-rise-in flex flex-col gap-4 p-6 [animation-delay:180ms] md:col-span-2">
@@ -107,7 +132,6 @@ export default async function HomePage({
         reveal={t('quoteReveal')}
         day={day}
       />
-
     </div>
   );
 }

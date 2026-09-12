@@ -72,7 +72,27 @@
     "patchesNew": "есть новое",
     "close": "закрыть",
     "footerLove": "сделано с любовью от трёх милых ублюдков",
-    "footerTelegram": "наша группа в Telegram"
+    "footerTelegram": "наша группа в Telegram",
+    "footerRights": "© 2026 подшар · все права высмеяны, ублюдки зарезервированы"
+  },
+  "weather": {
+    "label": "погода",
+    "place": "цюрих",
+    "feels": "ощущается как {temp}°",
+    "rain": "осадки {chance}%",
+    "unavailable": "погода не пришла. выгляни в окно",
+    "conditions": {
+      "clear": "ясно",
+      "clearNight": "ясная ночь",
+      "partly": "переменная облачность",
+      "cloudy": "пасмурно",
+      "fog": "туман",
+      "drizzle": "морось",
+      "rain": "дождь",
+      "snow": "снег",
+      "showers": "ливни",
+      "thunder": "гроза"
+    }
   },
   "patches": {
     "title": "Патчи",

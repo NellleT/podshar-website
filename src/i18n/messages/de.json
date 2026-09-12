@@ -72,7 +72,27 @@
     "patchesNew": "etwas neues",
     "close": "schliessen",
     "footerLove": "mit liebe gemacht von drei süssen mistkerlen",
-    "footerTelegram": "unsere Telegram-Gruppe"
+    "footerTelegram": "unsere Telegram-Gruppe",
+    "footerRights": "© 2026 podshar · alle rechte verspottet, mistkerle vorbehalten"
+  },
+  "weather": {
+    "label": "wetter",
+    "place": "zürich",
+    "feels": "gefühlt {temp}°",
+    "rain": "niederschlag {chance}%",
+    "unavailable": "kein wetter gekommen. schau aus dem fenster",
+    "conditions": {
+      "clear": "klar",
+      "clearNight": "klare nacht",
+      "partly": "teils bewölkt",
+      "cloudy": "bedeckt",
+      "fog": "nebel",
+      "drizzle": "niesel",
+      "rain": "regen",
+      "snow": "schnee",
+      "showers": "schauer",
+      "thunder": "gewitter"
+    }
   },
   "patches": {
     "title": "Patches",

@@ -240,7 +240,12 @@ export function AppShell({
             written in the code), so without it the icon is simply not drawn.
             The heart is held to the last word with a no-break space, because
             on a phone the line wraps and a heart alone on a line is a typo. */}
-        <footer className="mt-2 flex flex-col items-center gap-4 border-t border-rule-soft px-4 py-10 text-center">
+        {/* Taller at the bottom on a phone: the dog floats in the bottom-right
+            corner, and at phone width the small print runs nearly edge to edge
+            — so at the very end of the page it ran straight under him. 6rem
+            clears his 3.5rem and the margin he keeps. On a wider screen the
+            lines are short and centred, and never reach his corner. */}
+        <footer className="mt-2 flex flex-col items-center gap-4 border-t border-rule-soft px-4 pb-24 pt-10 text-center sm:pb-10">
           <p className="ps-label">
             {t('footerLove')}&nbsp;<span className="text-reactor">&#9829;</span>
           </p>
@@ -277,6 +282,10 @@ export function AppShell({
               </svg>
             </a>
           ) : null}
+          {/* The small print, which is the joke: the one line on a site like
+              this that is expected to be solemn. Quieter than the line above
+              it, the way small print always is. */}
+          <p className="ps-label text-ink-faint">{t('footerRights')}</p>
         </footer>
       </div>
 

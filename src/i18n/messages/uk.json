@@ -72,7 +72,27 @@
     "patchesNew": "є нове",
     "close": "закрити",
     "footerLove": "зроблено з любовʼю від трьох милих виродків",
-    "footerTelegram": "наша група в Telegram"
+    "footerTelegram": "наша група в Telegram",
+    "footerRights": "© 2026 підшар · усі права висміяно, виродки зарезервовані"
+  },
+  "weather": {
+    "label": "погода",
+    "place": "цюрих",
+    "feels": "відчувається як {temp}°",
+    "rain": "опади {chance}%",
+    "unavailable": "погода не прийшла. визирни у вікно",
+    "conditions": {
+      "clear": "ясно",
+      "clearNight": "ясна ніч",
+      "partly": "мінлива хмарність",
+      "cloudy": "похмуро",
+      "fog": "туман",
+      "drizzle": "мряка",
+      "rain": "дощ",
+      "snow": "сніг",
+      "showers": "зливи",
+      "thunder": "гроза"
+    }
   },
   "patches": {
     "title": "Патчі",
