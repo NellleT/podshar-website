@@ -94,6 +94,30 @@
       "thunder": "thunderstorm"
     }
   },
+  "presence": {
+    "label": "who's loitering",
+    "here": "here",
+    "seen": "seen {ago}",
+    "never": "not seen yet",
+    "you": "that's you",
+    "alone": "nobody here but you",
+    "some": "{count} of {total} here",
+    "all": "everyone's here. suspicious"
+  },
+  "trains": {
+    "label": "escape from HB",
+    "nobody": "nobody to take home",
+    "noStation": "no station yet",
+    "noStationYou": "set your station in the profile",
+    "atHB": "lives right at HB",
+    "unavailable": "SBB didn't answer. walk",
+    "gone": "all gone. reload the page",
+    "delay": "+{min} min",
+    "platform": "pl. {platform}",
+    "transfers": "{count, plural, =0 {direct} one {# change} other {# changes}}",
+    "in": "{min} min",
+    "now": "leaving"
+  },
   "patches": {
     "title": "Patches",
     "hint": "newest first. the small stuff is in here too"
@@ -153,13 +177,16 @@
     "going": "fine, taking you to {place}",
     "hello": "yeah, hello. what do you want",
     "home": {
-      "here": "the home page. a red button, the date, you, a thought",
+      "here": "the home page. a red button, the date, the weather, who is loitering, trains from HB, a thought",
       "greeting": "that is me saying hello, a new line every day",
       "reactor": "the ПХ button, says do not press. you pressed it 😈",
       "today": "date and clock. the date is shared, the clock is your machine",
       "member": "that is you. name, handle, a letter instead of a face",
       "quote": "thought of the day, one for all three. no depth",
-      "patches": "the button at the bottom. press it, the whole patch list is there",
+      "patches": "the version at the bottom of the drawer. press it, the whole patch list is there",
+      "weather": "zurich weather, one for all of us. no umbrellas handed out",
+      "presence": "who is on the site right now. the rest, and when they dropped off",
+      "trains": "the next train from HB to each of your stations. set yours in the profile",
       "drawer": "the menu. five empty rows, no sections yet",
       "dog": "i am the pug. i know everything here, there is bugger all here"
     },
@@ -167,11 +194,12 @@
       "here": "every patch, by number. who did what and when"
     },
     "profile": {
-      "here": "your profile. name, handle, email, password, a mark",
+      "here": "your profile. name, handle, email, station, password, a mark",
       "identity": "the name is for us, the handle is for signing in",
       "avatar": "eight marks. no photos, nothing to upload either",
       "security": "password. change it and every other device drops",
-      "invite": "adds a fourth person. owner only"
+      "invite": "adds a fourth person. owner only",
+      "station": "your home station. the homepage finds your train from HB with it"
     }
   },
   "quotes": {
@@ -242,6 +270,10 @@
     "createInvite": "make a link",
     "inviteReady": "there you go, copy it",
     "inviteOnce": "shown once. lose it and you make another.",
+    "stationTitle": "home station",
+    "stationHint": "where you head from Zürich HB. the homepage shows the next train. leave empty to clear",
+    "station": "station",
+    "stationSaved": "found: {station}",
     "errors": {
       "invalid": "something here is wrong.",
       "signedOut": "your session ended. sign in again.",
@@ -256,7 +288,9 @@
       "samePassword": "that is the same password.",
       "wrongCurrent": "current password is wrong.",
       "ownerOnly": "only the owner can invite.",
-      "alreadyInvited": "that handle or email is already on the list."
+      "alreadyInvited": "that handle or email is already on the list.",
+      "stationNotFound": "SBB doesn't know that station",
+      "stationLookup": "SBB didn't answer, try again"
     }
   },
   "reset": {

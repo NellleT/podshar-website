@@ -76,6 +76,31 @@ export const HOME: Place = {
         'what changed', 'was neu'
       ]
     },
+    {
+      id: 'weather',
+      // No bare 'rain': a stem matches anywhere in the message, and "rain" sits
+      // inside "train", "brain" and "drain" — "next train" was answered with
+      // the weather. The leading space keeps it a word start. For the same
+      // reason no 'зонт' (inside "горизонт") and no 'schirm' ("bildschirm").
+      terms: [
+        'погод', 'дожд', 'температур', 'холодн', 'жарк', 'парасол', 'дощ',
+        'weather', ' rain', 'rainy', 'raining', 'umbrella', 'wetter', 'regen', 'regnet'
+      ]
+    },
+    {
+      id: 'presence',
+      terms: [
+        'кто тут', 'кто онлайн', 'онлайн', 'трётся', 'хто тут', 'вештаєт',
+        'who is here', "who's here", 'loiter', 'online', 'wer ist da', 'wer hier', 'rumlung'
+      ]
+    },
+    {
+      id: 'trains',
+      terms: [
+        'поезд', 'электричк', 'вокзал', 'станци', 'потяг', 'станці', 'sbb', 'hb',
+        'train', 'station', 'zug', 'bahnhof'
+      ]
+    },
     { id: 'drawer', terms: ['меню', 'шторк', 'menu', 'menü', 'навигац', 'навігац'] },
     { id: 'dog', terms: ['мопс', 'собак', 'пёс', 'пес', 'mops', 'pug', 'hund', 'ты кто', 'ти хто', 'who are you'] }
   ]
@@ -101,7 +126,11 @@ export const PROFILE: Place = {
     { id: 'identity', terms: ['имя', "ім'я", 'хендл', 'name', 'handle', 'nick'] },
     { id: 'avatar', terms: ['аватар', 'картинк', 'фотк', 'avatar', 'picture', 'bild'] },
     { id: 'security', terms: ['пароль', 'пароля', 'безопасн', 'безпек', 'password', 'passwort', 'security'] },
-    { id: 'invite', terms: ['пригласи', 'запроси', 'инвайт', 'invite', 'einladung'] }
+    { id: 'invite', terms: ['пригласи', 'запроси', 'инвайт', 'invite', 'einladung'] },
+    {
+      id: 'station',
+      terms: ['станци', 'станці', 'вокзал', 'поезд', 'потяг', 'station', 'train', 'bahnhof', 'zug']
+    }
   ]
 };
 

@@ -1,6 +1,7 @@
 import { redirect } from '@/i18n/routing';
 import { AppShell } from '@/components/AppShell';
 import { PatchList } from '@/components/Patches';
+import { PresenceBeat } from '@/components/Presence';
 import { readSession } from '@/lib/auth/session';
 import { guestModeAllowed } from '@/lib/auth/config';
 import { getCurrentMember, getQuickStats } from '@/lib/session';
@@ -39,18 +40,24 @@ export default async function AppLayout({
   const [profile, stats] = await Promise.all([getCurrentMember(), getQuickStats()]);
 
   return (
-    /* The patch list is rendered here, on the server, and handed to the shell
-       as a prop — it needs the database to turn handles into names, which a
-       client dialog cannot do. It costs a few kilobytes on every page and buys
-       a panel that opens instantly, with no spinner and no second request. */
-    <AppShell
-      profile={profile}
-      stats={stats}
-      patches={<PatchList locale={locale} />}
-      telegram={telegramInvite()}
-    >
-      {children}
-    </AppShell>
+    <>
+      {/* The patch list is rendered here, on the server, and handed to the
+          shell as a prop — it needs the database to turn handles into names,
+          which a client dialog cannot do. It costs a few kilobytes on every
+          page and buys a panel that opens instantly, with no spinner and no
+          second request. */}
+      <AppShell
+        profile={profile}
+        stats={stats}
+        patches={<PatchList locale={locale} />}
+        telegram={telegramInvite()}
+      >
+        {children}
+      </AppShell>
+      {/* Here and not on the homepage: every signed-in page is being on the
+          site, and this layout is exactly the set of signed-in pages. */}
+      <PresenceBeat />
+    </>
   );
 }
 

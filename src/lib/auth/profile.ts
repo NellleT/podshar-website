@@ -10,6 +10,7 @@ import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { readSession, destroySession } from '@/lib/auth/session';
 import { AVATAR_PRESETS } from '@/components/profile/MemberAvatar';
 import { routing } from '@/i18n/routing';
+import { findStation } from '@/lib/trains';
 
 /**
  * Everything the profile page can do.
@@ -249,4 +250,64 @@ export async function revokeOtherSessions(): Promise<ProfileState> {
 /** Sign out here, used by the profile page's own button. */
 export async function endSession(): Promise<void> {
   await destroySession();
+}
+
+export type StationState = ProfileState & { station?: string };
+
+/**
+ * Your home station, for the train tile on the homepage.
+ *
+ * Typed as a name and resolved through SBB, and the answer says which station
+ * it found — a first match is usually right, and the time it is not, the
+ * person sees it at once. An empty field clears it.
+ *
+ * Locations are shared rows: two people at the same station point at the same
+ * place rather than each getting a copy. Nothing here touches the schema — the
+ * `homeLocationId` column and the `locations` table have been there from the
+ * start, waiting for something to fill them.
+ */
+export async function updateHomeStation(
+  _prev: StationState,
+  formData: FormData
+): Promise<StationState> {
+  const session = await readSession();
+  if (!session) return { error: 'signedOut' };
+
+  const parsed = z.string().trim().max(80).safeParse(formData.get('station') ?? '');
+  if (!parsed.success) return { error: 'invalid' };
+  const query = parsed.data;
+
+  if (!query) {
+    await prisma.user.update({ where: { id: session.userId }, data: { homeLocationId: null } });
+    revalidatePath('/', 'layout');
+    return { ok: true };
+  }
+
+  let found;
+  try {
+    found = await findStation(query);
+  } catch (error) {
+    console.warn('[podshar] station lookup failed:', error instanceof Error ? error.message : error);
+    return { error: 'stationLookup' };
+  }
+  if (!found) return { error: 'stationNotFound' };
+
+  const location =
+    (await prisma.location.findFirst({ where: { stopId: found.id, label: found.name } })) ??
+    (await prisma.location.create({
+      data: {
+        label: found.name,
+        latitude: found.latitude,
+        longitude: found.longitude,
+        stopId: found.id
+      }
+    }));
+
+  await prisma.user.update({
+    where: { id: session.userId },
+    data: { homeLocationId: location.id }
+  });
+
+  revalidatePath('/', 'layout');
+  return { ok: true, station: found.name };
 }

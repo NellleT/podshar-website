@@ -5,9 +5,12 @@ import { Greeting } from '@/components/Greeting';
 import { MemberAvatar } from '@/components/profile/MemberAvatar';
 import { LocalClock } from '@/components/LocalClock';
 import { PHButton } from '@/components/PHButton';
+import { PresenceBoard } from '@/components/Presence';
 import { QuoteCookie } from '@/components/QuoteCookie';
+import { TrainsPending, TrainsTile } from '@/components/TrainsTile';
 import { WeatherPending, WeatherTile } from '@/components/WeatherTile';
 import { getCurrentMember } from '@/lib/session';
+import { listPresence } from '@/lib/presence';
 import { sharedDayIndex } from '@/lib/day';
 import { resolveLocale } from '@/lib/locale';
 
@@ -19,9 +22,11 @@ const QUOTE_COUNT = 8;
  *
  * Six columns. The greeting spans all of them; the reactor takes a wide block
  * that is three rows tall, and the three small blocks — the date, the weather
- * and who you are — stack beside it to match its height. The quote runs full
- * width underneath. Deliberately varied block sizes — an even three-across row
- * of equal thirds reads as a table, not a bento.
+ * and who you are — stack beside it to match its height. Under that, a row of
+ * two unequal blocks about the other two people: who is on the site, narrow,
+ * and how each of you gets home from HB, wide. The quote runs full width at
+ * the bottom. Deliberately varied block sizes — an even three-across row of
+ * equal thirds reads as a table, not a bento.
  *
  * Three beside the reactor, not two. With two, the reactor's height was shared
  * out between the date and the profile, and both stood mostly empty: a label,
@@ -40,11 +45,13 @@ export default async function HomePage({
 }) {
   const locale = resolveLocale((await params).locale);
 
-  const [t, tQuote, tWeather, member] = await Promise.all([
+  const [t, tQuote, tWeather, tTrains, member, people] = await Promise.all([
     getTranslations('home'),
     getTranslations('quotes'),
     getTranslations('weather'),
-    getCurrentMember()
+    getTranslations('trains'),
+    getCurrentMember(),
+    listPresence()
   ]);
 
   const now = new Date();
@@ -122,6 +129,22 @@ export default async function HomePage({
           </div>
         </div>
       </section>
+
+      {/* Who is on the site. Read from the database here, so the first paint
+          already knows; the heartbeat in the (app) layout keeps it current
+          from then on. */}
+      <PresenceBoard
+        initial={people}
+        me={member.handle}
+        serverNow={now.getTime()}
+        className="md:col-span-2"
+      />
+
+      {/* How each of you gets home from HB. Streams in like the weather: SBB
+          is a third party, and the page does not wait for it. */}
+      <Suspense fallback={<TrainsPending label={tTrains('label')} className="md:col-span-4" />}>
+        <TrainsTile me={member.handle} className="md:col-span-4" />
+      </Suspense>
 
       {/* Quote of the day. The one place on the page allowed to have a voice,
           and the only block you have to open before it will speak. */}

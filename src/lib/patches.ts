@@ -56,6 +56,18 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.36',
+    date: '2026-09-12',
+    author: 'nellet',
+    note: 'как свалить с HB: у каждого своя станция в профиле, на главной — ближайший поезд'
+  },
+  {
+    version: '0.35',
+    date: '2026-09-12',
+    author: 'nellet',
+    note: 'на главной «кто тут трётся»: кто сейчас на сайте и когда были остальные'
+  },
+  {
     version: '0.34',
     date: '2026-09-12',
     author: 'nellet',

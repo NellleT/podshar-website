@@ -1,11 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 
 import {
+  HomeStationForm,
   IdentityForm,
   InviteForm,
   PasswordForm,
   SessionsForm
 } from '@/components/profile/ProfileForms';
+import { prisma } from '@/lib/db';
 import { readSession } from '@/lib/auth/session';
 import { guestModeAllowed } from '@/lib/auth/config';
 import { resolveLocale } from '@/lib/locale';
@@ -25,7 +27,8 @@ export async function generateMetadata({
  * The profile page.
  *
  * Everything about *you* that the site can change, in one place: who you are,
- * how you sign in, and — if you own the place — who else may.
+ * where you go home to, how you sign in, and — if you own the place — who else
+ * may.
  *
  * It reads the session directly rather than taking the member from the layout.
  * The layout hands down a display shape (name, handle, avatar); this page needs
@@ -49,6 +52,12 @@ export default async function ProfilePage({
   }
 
   const { user } = session;
+  const home = user.homeLocationId
+    ? await prisma.location.findUnique({
+        where: { id: user.homeLocationId },
+        select: { label: true }
+      })
+    : null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 p-3 sm:gap-4 sm:p-4">
@@ -69,6 +78,10 @@ export default async function ProfilePage({
             avatarPreset: user.avatarPreset
           }}
         />
+      </div>
+
+      <div className="animate-rise-in [animation-delay:90ms]">
+        <HomeStationForm current={home?.label ?? null} />
       </div>
 
       <div className="animate-rise-in [animation-delay:120ms]">
