@@ -48,6 +48,7 @@ export function AppShell({
 }) {
   const t = useTranslations('home');
   const tPatches = useTranslations('patches');
+  const tNav = useTranslations('nav');
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
 
@@ -198,6 +199,17 @@ export function AppShell({
         </header>
 
         <main className="flex flex-1 flex-col">{children}</main>
+
+        {/* A footer, and nothing in it yet.
+
+            Deliberately a placeholder rather than an empty strip: dashed, faint
+            and saying so, the same way the five reserved rows in the drawer do.
+            An empty bar at the bottom of every page reads as a bug; a bar that
+            admits it is unfinished reads as a plan. What goes here has not been
+            decided, and inventing something to fill it would be deciding. */}
+        <footer className="mx-3 mb-3 mt-2 rounded-block border-2 border-dashed border-rule-soft px-4 py-7 text-center sm:mx-4 sm:mb-4">
+          <p className="ps-label text-ink-faint">{tNav('wip')}</p>
+        </footer>
       </div>
 
       <RightAIChat />

@@ -100,6 +100,43 @@
     @apply text-label font-semibold lowercase text-ink-muted;
   }
 
+  /* A scrollbar that stays out of the way until you reach for it.
+
+     The track keeps its width at all times, so nothing reflows when the thumb
+     appears — hiding the bar outright and showing it on hover moves the text
+     under the cursor, which is the one moment it must not move. Only the
+     thumb's colour changes, and it fades rather than snapping.
+
+     Two declarations for one effect: Firefox reads `scrollbar-color`, WebKit
+     and Chromium read the pseudo-element. Neither understands the other. */
+  .scroll-quiet {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .scroll-quiet:hover,
+  .scroll-quiet:focus-within {
+    scrollbar-color: rgb(var(--ink) / 0.26) transparent;
+  }
+
+  .scroll-quiet::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .scroll-quiet::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    background-clip: content-box;
+    border: 4px solid transparent;
+    border-radius: 9999px;
+    transition: background-color 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .scroll-quiet:hover::-webkit-scrollbar-thumb,
+  .scroll-quiet:focus-within::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--ink) / 0.26);
+  }
+
   /* Divider between sections inside one panel. */
   .ps-rule {
     @apply border-t border-rule-soft;

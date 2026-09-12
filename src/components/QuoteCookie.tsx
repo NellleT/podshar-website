@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
+import { SpoilerDust } from './SpoilerDust';
+
 /**
  * The quote of the day, sealed until you break it open.
  *
@@ -125,17 +127,11 @@ export function QuoteCookie({
           aria-label={reveal}
           className="group absolute inset-0 grid place-items-center"
         >
-          {/* Dots over the blur. A blur on its own reads as a page that failed
-              to render; a texture over it reads as something covered up. */}
-          <span
-            aria-hidden="true"
-            className="absolute inset-0 opacity-70 transition-opacity duration-drape ease-drape group-hover:opacity-40"
-            style={{
-              backgroundImage:
-                'radial-gradient(rgb(var(--ink) / 0.16) 1px, transparent 1.2px)',
-              backgroundSize: '7px 7px'
-            }}
-          />
+          {/* Dust over the blur. A blur on its own reads as a page that failed
+              to render; something scattered over it reads as covered up. It
+              also gives the block the only thing on this page that answers the
+              cursor without being pressed. */}
+          <SpoilerDust active={!opened} />
           {/* The site's own label, not a button glued on top. A bordered pill
               with a shadow exists nowhere else here — the reactor's own hint is
               exactly this: small, lowercase, muted, floating over the thing it

@@ -56,6 +56,18 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.23',
+    date: '2026-09-12',
+    author: 'trqwaa',
+    note: 'внизу сайта появился подвал — пока пустой, но место занято'
+  },
+  {
+    version: '0.22',
+    date: '2026-09-12',
+    author: 'trqwaa',
+    note: 'пыль над мыслью дня живая: плавает сама и расступается под курсором'
+  },
+  {
     version: '0.21',
     date: '2026-09-12',
     author: 'trqwaa',

@@ -86,14 +86,18 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="animate-rise-in relative max-h-full w-full max-w-3xl overflow-y-auto overscroll-contain rounded-lg border-2 border-rule bg-surface shadow-xl outline-none"
+        // Rounder than a bento card on purpose: a panel floating over a blurred
+        // page is not one of the blocks in the grid, and the softer corner is what
+        // says so. No shadow — nothing on this site casts one, and the dimmed,
+        // blurred page behind already lifts the panel off it.
+        className="animate-rise-in scroll-quiet relative max-h-full w-full max-w-3xl overflow-y-auto overscroll-contain rounded-[20px] border-2 border-rule bg-surface outline-none"
       >
         {/* The title travels with the close button rather than scrolling away
             under it. A sticky strip carrying only the cross left the heading to
             slide beneath a half-transparent bar, which reads as a rendering
             fault. Opaque, and a rule underneath, so the list passing below has
             a clean edge to pass under. */}
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-lg border-b border-rule-soft bg-surface px-6 py-4 sm:px-10">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 rounded-t-[18px] border-b border-rule-soft bg-surface px-6 py-4 sm:px-10">
           <div className="min-w-0">
             <h2 className="truncate text-2xl font-semibold leading-tight text-ink">{title}</h2>
             {hint ? <p className="ps-label mt-1">{hint}</p> : null}
