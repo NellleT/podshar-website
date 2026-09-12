@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.37',
+    date: '2026-09-12',
+    author: 'nellet',
+    note: 'окно мопса больше не проваливается под экран, если его туда уронить или оставить низко'
+  },
+  {
     version: '0.36',
     date: '2026-09-12',
     author: 'nellet',

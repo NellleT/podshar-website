@@ -15,8 +15,24 @@ const MAX_FIELD = 120;
 
 /** Where the panel sits and whether it has been unclipped, per browser. */
 const STORE_KEY = 'podshar:chat';
-/** How much of the panel must stay on screen after a resize, in pixels. */
+/** How much of a released panel must stay on screen after a resize or a drop, in pixels. */
 const EDGE_KEEP = 56;
+
+/**
+ * How far a released panel has to move to stay within reach: at least
+ * EDGE_KEEP pixels of it across, and its top edge inside the window. The header
+ * is the only handle, and a panel whose header is off the screen cannot be
+ * picked up again by anything on the page.
+ */
+function pullBack(r: DOMRect): { dx: number; dy: number } {
+  let dx = 0;
+  let dy = 0;
+  if (r.right < EDGE_KEEP) dx = EDGE_KEEP - r.right;
+  else if (r.left > window.innerWidth - EDGE_KEEP) dx = window.innerWidth - EDGE_KEEP - r.left;
+  if (r.top < 0) dy = -r.top;
+  else if (r.top > window.innerHeight - EDGE_KEEP) dy = window.innerHeight - EDGE_KEEP - r.top;
+  return { dx, dy };
+}
 /** Pointer travel, in px, past which a press on the grip counts as a drag. */
 const SLOP = 5;
 /** How close to the right edge the panel must come before it will clip back. */
@@ -157,28 +173,35 @@ export function RightAIChat() {
   // there is nothing left to grab to bring it back. Measured rather than
   // computed: the panel's own rectangle already accounts for its size, its
   // anchor and however far it has been dragged.
+  //
+  // Measured twice: now, and again once the anchor has finished moving.
+  // Releasing the panel animates its top, right, width and height, and a panel
+  // restored from storage is released on every page load — so the first
+  // measurement sees the docked rectangle, mid-slide, and the correction came
+  // out one anchor-shift short. A panel left low ended 80px further down than
+  // intended, below the bottom of the screen with no header to grab: the dog
+  // fell off the page and stayed there.
   useEffect(() => {
     if (!free) return;
+    const el = wrapRef.current;
     const clamp = () => {
-      const el = wrapRef.current;
       if (!el) return;
-      const r = el.getBoundingClientRect();
-      let dx = 0;
-      let dy = 0;
-      if (r.right < EDGE_KEEP) dx = EDGE_KEEP - r.right;
-      else if (r.left > window.innerWidth - EDGE_KEEP) {
-        dx = window.innerWidth - EDGE_KEEP - r.left;
-      }
-      if (r.top < 0) dy = -r.top;
-      else if (r.top > window.innerHeight - EDGE_KEEP) {
-        dy = window.innerHeight - EDGE_KEEP - r.top;
-      }
+      const { dx, dy } = pullBack(el.getBoundingClientRect());
       if (dx) x.set(x.get() + dx);
       if (dy) y.set(y.get() + dy);
     };
+    // The wrapper's own transitions only: the panel inside it animates too, and
+    // its events bubble up to here.
+    const onSettled = (e: TransitionEvent) => {
+      if (e.target === el) clamp();
+    };
     clamp();
+    el?.addEventListener('transitionend', onSettled);
     window.addEventListener('resize', clamp);
-    return () => window.removeEventListener('resize', clamp);
+    return () => {
+      el?.removeEventListener('transitionend', onSettled);
+      window.removeEventListener('resize', clamp);
+    };
   }, [free, x, y]);
 
   useEffect(() => {
@@ -371,7 +394,18 @@ export function RightAIChat() {
       return;
     }
     setWillSnap(false);
-    persist({ x: x.get(), y: y.get() });
+
+    // Let go past the edge of the screen, it comes back to where it can be
+    // reached. Nothing else would ever bring it back: dragging needs the header,
+    // and the header is what went over the edge. Stored where it is going, not
+    // where the hand opened.
+    const el = wrapRef.current;
+    const { dx, dy } = el ? pullBack(el.getBoundingClientRect()) : { dx: 0, dy: 0 };
+    const nx = x.get() + dx;
+    const ny = y.get() + dy;
+    if (dx) animate(x, nx, { type: 'spring', stiffness: 420, damping: 30 });
+    if (dy) animate(y, ny, { type: 'spring', stiffness: 420, damping: 30 });
+    persist({ x: nx, y: ny });
   };
 
   moveRef.current = onDragMove;
