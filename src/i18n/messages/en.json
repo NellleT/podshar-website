@@ -70,7 +70,8 @@
     "quoteHint": "tap tap",
     "quoteReveal": "show the quote of the day",
     "patchesNew": "something new",
-    "close": "close"
+    "close": "close",
+    "footerLove": "made with love"
   },
   "patches": {
     "title": "Patches",

@@ -49,7 +49,6 @@ export function AppShell({
 }) {
   const t = useTranslations('home');
   const tPatches = useTranslations('patches');
-  const tNav = useTranslations('nav');
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
 
@@ -96,7 +95,7 @@ export function AppShell({
         onOpenPatches={patches ? () => setPatchesOpen(true) : undefined}
       />
 
-      <div className="flex min-w-full flex-1 flex-col lg:min-w-0">
+      <div className="relative flex min-w-full flex-1 flex-col lg:min-w-0">
         {/* Top bar. The trigger lives in the flow, so the push carries it.
 
             Sticky, so the way out travels with you. The switch here is the only
@@ -199,22 +198,40 @@ export function AppShell({
           </Link>
         </header>
 
+        {/* With the drawer open, the page beside it is a way out.
+
+            A scrim rather than a click handler on the page: the first press
+            should close the drawer and do nothing else. Hanging the close on
+            the page itself would mean that same press also fires the reactor,
+            or follows whatever link happened to be under the finger, which is
+            not what someone reaching past an open drawer means by it.
+
+            Stops below the top bar on purpose. `z-20` sits under the header's
+            `z-30`, so the switch and the back arrow stay live — the two
+            controls you might actually want while the drawer is open. */}
+        {navOpen ? (
+          <button
+            type="button"
+            aria-label={t('closeMenu')}
+            onClick={() => setNavOpen(false)}
+            className="absolute inset-0 z-20 cursor-default"
+          />
+        ) : null}
+
         <main className="flex flex-1 flex-col">{children}</main>
 
-        {/* A footer, and nothing in it yet.
+        {/* The footer.
 
-            Deliberately a placeholder rather than an empty strip: dashed and
-            saying so, the way the five reserved rows in the drawer do. An empty
-            bar at the bottom of every page reads as a bug; a bar that admits it
-            is unfinished reads as a plan.
-
-            Edge to edge with a rule on top, not an inset card — a footer is a
-            band the page ends with, and the first attempt, floating in its own
-            rounded box with margins, read as one more bento block that happened
-            to be empty. The dashes are the only thing saying "not yet"; the
-            shape says "footer". */}
-        <footer className="mt-2 border-t-2 border-dashed border-rule px-4 py-10 text-center">
-          <p className="ps-label text-ink-faint">{tNav('wip')}</p>
+            It said "in development" for a day, which was honest and dreary —
+            and it was not even true of the footer, only of whatever might one
+            day go in it. Nobody knows what that is, so rather than reserve the
+            space with an apology it says the one thing about this site that is
+            certain and worth reading. A band the page ends with, edge to edge
+            with a rule on top; the heart is the only colour down here. */}
+        <footer className="mt-2 border-t border-rule-soft px-4 py-10 text-center">
+          <p className="ps-label">
+            {t('footerLove')} <span className="text-reactor">&#9829;</span>
+          </p>
         </footer>
       </div>
 

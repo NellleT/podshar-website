@@ -70,7 +70,8 @@
     "quoteHint": "tap tap",
     "quoteReveal": "показать цитату дня",
     "patchesNew": "есть новое",
-    "close": "закрыть"
+    "close": "закрыть",
+    "footerLove": "сделано с любовью"
   },
   "patches": {
     "title": "Патчи",

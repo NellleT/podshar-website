@@ -75,6 +75,25 @@ const CURL = 0.5;
 const HOOK = 0.42;
 /** Cursor distance, in viewBox units, past which reaching stops helping. */
 const REACH_CLAMP = 96;
+/**
+ * How close the pointer has to be to the centre before it stops having a
+ * direction, in viewBox units.
+ *
+ * A pointer on the origin has no bearing: `atan2` returns whatever the last
+ * sub-pixel of jitter said, and the field threw everything into that arbitrary
+ * lobe — one side reaching, the rest stubs, for a cursor pointing nowhere. The
+ * core is 29 units across, so this is roughly its own edge.
+ */
+const FOCUS = 26;
+/**
+ * What every vine is worth once the pointer has no direction.
+ *
+ * Not zero: with the lobe gone the field must not collapse to stubs, it must
+ * become an even star. This is the length they all share at the centre, chosen
+ * to sit just under a fully-facing vine so the ring reads as poised rather than
+ * fully extended.
+ */
+const EVEN = 0.42;
 /** How far a press pushes every vine out, in viewBox units. */
 const BLAST = 11;
 /**
@@ -129,7 +148,14 @@ function vine(
   // vines dim exactly as they fly, which reads as them giving up rather than
   // being pushed.
   const align = Math.max(0, Math.cos(base - bearing));
-  const lobe = align * align;
+
+  // How much of a direction the pointer actually has. One at arm's length, zero
+  // sitting on the core, and the lobe dissolves into an even ring on the way
+  // down. Everything directional below is scaled by it, so at the centre the
+  // field has no front, nothing to grab and nothing to bend around — which is
+  // the truth of where the pointer is.
+  const focus = Math.min(cursorR / FOCUS, 1);
+  const lobe = align * align * focus + EVEN * (1 - focus);
 
   // How much this vine behaves as though it were facing the cursor.
   //
@@ -188,25 +214,37 @@ function vine(
   // Each vine takes the point on that ring nearest its own free tip.
   const ux = freeX - targetX;
   const uy = freeY - targetY;
-  const un = Math.hypot(ux, uy) || 1;
-  const ringX = targetX + (ux / un) * RING;
-  const ringY = targetY + (uy / un) * RING;
+  const un = Math.hypot(ux, uy);
+
+  // A tip sitting on top of the cursor has no direction away from it, and
+  // normalising a near-zero vector swings the ring point right around the
+  // circle between one frame and the next — which draws as the vine flicking.
+  // Close in, the vine's own bearing takes over, which is where it came from.
+  const near = Math.min(un / 10, 1);
+  const rx = (un ? ux / un : 0) * near + cos * (1 - near);
+  const ry = (un ? uy / un : 0) * near + sin * (1 - near);
+  const rn = Math.hypot(rx, ry) || 1;
+  const nx = rx / rn;
+  const ny = ry / rn;
+
+  const ringX = targetX + nx * RING;
+  const ringY = targetY + ny * RING;
 
   // The press opens the hand completely, and keeps it open for the whole
   // flight: while the wave is going out the vines must not still be reaching
   // for the pointer, or the explosion stays aimed at it however even the push
   // is. The hand closes again only once the swinging has settled.
-  const grip = GRIP * lobe * (0.3 + 0.7 * intensity) * (1 - release);
+  const grip = GRIP * lobe * (0.3 + 0.7 * intensity) * (1 - release) * focus;
   const tipX = freeX + (ringX - freeX) * grip;
   const tipY = freeY + (ringY - freeY) * grip;
 
   // `sin(bearing - a)` is the cursor's tangential direction from this vine: it
   // flips sign across the cursor, so vines on either side bend inward.
   const tangential = Math.sin(bearing - a);
-  const side = tangential >= 0 ? 1 : -1;
   // Faded out by the burst for the same reason as the grip: a vine still
   // curving toward the cursor mid-throw reads as reluctance, not scatter.
-  const bend = CURL * len * tangential * (0.3 + 0.7 * align) * (1 - release) + drift * 1.9;
+  const bend =
+    CURL * len * tangential * (0.3 + 0.7 * align) * (1 - release) * focus + drift * 1.9;
 
   // First control point: out along the vine's own bearing, swung sideways. This
   // is the stem, and it keeps its own direction as it leaves the core.
@@ -218,9 +256,17 @@ function vine(
   // tangent is what makes the last stretch of the curve wrap the cursor instead
   // of arriving head-on at it.
   // `grip` already falls to zero at full burst, so the hook goes with it.
-  const hook = HOOK * len * lobe * grip * side;
-  const c2X = tipX + (uy / un) * hook + (ux / un) * len * 0.12;
-  const c2Y = tipY - (ux / un) * hook + (uy / un) * len * 0.12;
+  // `tangential` itself, not its sign. The old `>= 0 ? 1 : -1` reversed the
+  // hook in a single frame as a vine crossed the cursor's bearing: a step change
+  // in a control point, which draws as the curve turning inside out. Circling
+  // the button ran seventeen vines through that flip one after another, and
+  // that — not the reaching — is what made the whole field look like it was
+  // breaking. Unsigned, the reversal becomes a pass through zero, and a vine
+  // aimed straight at the cursor stops hooking sideways at all, which it should
+  // never have been doing.
+  const hook = HOOK * len * lobe * grip * tangential;
+  const c2X = tipX + ny * hook + nx * len * 0.12;
+  const c2Y = tipY - nx * hook + ny * len * 0.12;
 
   const rootX = 100 + cos * ROOT;
   const rootY = 100 + sin * ROOT;

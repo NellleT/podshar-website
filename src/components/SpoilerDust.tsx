@@ -47,7 +47,9 @@ type Speck = {
 function makeField(width: number, height: number): Speck[] {
   // Density, not a fixed count: the block is one width on a phone and another
   // on a desktop, and a fixed count leaves one of them bald.
-  const count = Math.min(560, Math.max(90, Math.round((width * height) / 360)));
+  // Fewer than before, because each one is bigger. Held at the old density
+  // the field closed into a solid grey mass and stopped reading as specks.
+  const count = Math.min(420, Math.max(70, Math.round((width * height) / 540)));
   const specks: Speck[] = [];
 
   for (let i = 0; i < count; i++) {
@@ -55,15 +57,19 @@ function makeField(width: number, height: number): Speck[] {
     specks.push({
       homeX: Math.random() * width,
       homeY: Math.random() * height,
-      // Mostly small. A few larger ones stop the field reading as noise at one
-      // frequency, which is what makes a grid of identical dots look printed.
-      size: roll > 0.94 ? 2.6 + Math.random() * 1.4 : 0.7 + Math.random() * 1.5,
+      // Big enough to be recognised as shapes. The first pass was under two
+      // pixels across, at which size a square, a diamond and a circle are the
+      // same thing — a dot — and the whole point of having three was lost.
+      size: roll > 0.93 ? 3.4 + Math.random() * 2.2 : 1.3 + Math.random() * 1.9,
       alpha: 0.2 + Math.random() * 0.58,
       shape: roll > 0.9 ? 1 : roll > 0.82 ? 2 : 0,
       phase: Math.random() * Math.PI * 2,
-      driftX: 0.16 + Math.random() * 0.38,
-      driftY: 0.13 + Math.random() * 0.33,
-      amp: 1.4 + Math.random() * 3.4,
+      // Roughly four times the old rate, over twice the distance. The first
+      // pass drifted so slowly that a still screenshot and the live block were
+      // indistinguishable — motion nobody can see is motion that is not there.
+      driftX: 0.55 + Math.random() * 1.15,
+      driftY: 0.48 + Math.random() * 1.0,
+      amp: 3 + Math.random() * 5.5,
       offX: 0,
       offY: 0
     });

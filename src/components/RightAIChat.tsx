@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, useDragControls, useMotionValue } from 'framer-motion';
+import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/routing';
 import { placeForPath } from '@/lib/navigation';
@@ -17,6 +17,25 @@ const MAX_FIELD = 120;
 const STORE_KEY = 'podshar:chat';
 /** How much of the panel must stay on screen after a resize, in pixels. */
 const EDGE_KEEP = 56;
+/** Pointer travel, in px, past which a press on the grip counts as a drag. */
+const SLOP = 5;
+/** How close to the right edge the panel must come before it will clip back. */
+const SNAP = 96;
+/**
+ * How far the panel has to be pulled away from the edge before it comes off.
+ *
+ * Far enough that a stray drag on the header does not tear it loose, close
+ * enough that the pull is one movement of the wrist and not a haul.
+ */
+const TEAR = 92;
+/**
+ * How much of that pull the panel actually gives, at most.
+ *
+ * The gap it opens is the whole tell: it is being held, and it is starting to
+ * come away. Following the hand one-for-one would say the opposite — that it
+ * was never attached to anything.
+ */
+const GIVE = 46;
 
 /**
  * Podshar, the resident assistant.
@@ -56,14 +75,55 @@ export function RightAIChat() {
    * than wherever it was dropped: docking is a place, not a direction.
    */
   const [free, setFree] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  /** True while a release right now would clip the panel back to the edge. */
+  const [willSnap, setWillSnap] = useState(false);
+  /** Brief, and only to acknowledge a landing. */
+  const [landed, setLanded] = useState(false);
+  /** True while the panel is being pulled but has not yet come off the edge. */
+  const [peeling, setPeeling] = useState(false);
+  /**
+   * The same fact as `willSnap`, for the code rather than the screen.
+   *
+   * The pointer handlers are registered once, at the start of a gesture, and a
+   * closure made then reads whatever `willSnap` was at that moment — which is
+   * always false, since nothing has moved yet. State draws the landing zone; the
+   * ref decides where the panel goes when the hand opens.
+   */
+  const snapRef = useRef(false);
+
+  /**
+   * The live gesture handlers, so a drag in progress can reach the current ones.
+   *
+   * The listeners go on at pointer-down and must come off by the identical
+   * function objects. A drag re-renders this component many times and every
+   * render builds new handlers, so registering one and removing another would
+   * leave a listener on the window for good — quietly dragging the panel on
+   * some later, unrelated click.
+   */
+  const moveRef = useRef<(e: PointerEvent) => void>(() => {});
+  const upRef = useRef<() => void>(() => {});
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Dragging is started by hand from the header, not by framer-motion's own
-  // listener on the whole panel. Otherwise a swipe meant to scroll the
-  // conversation picks the window up instead, and selecting a line of the dog's
-  // reply drags the room it is written in.
-  const dragControls = useDragControls();
+  /**
+   * The gesture in progress, if any.
+   *
+   * A ref rather than state: this changes on every pointer move, and a panel
+   * that re-renders sixty times a second while being dragged is a panel that
+   * drags badly.
+   */
+  const gesture = useRef<{
+    startX: number;
+    startY: number;
+    baseX: number;
+    baseY: number;
+    /** Where inside the header the pointer took hold. */
+    grabX: number;
+    grabY: number;
+    torn: boolean;
+    moved: boolean;
+  } | null>(null);
 
   // Read after mount, never during render: the server has no idea where this
   // browser last left the panel, and disagreeing about it is a hydration error
@@ -135,18 +195,187 @@ export function RightAIChat() {
     if (open) panelRef.current?.querySelector('textarea')?.focus();
   }, [open]);
 
-  const toggleFree = () => {
-    if (free) {
-      // Home, not wherever it happened to be left.
-      x.set(0);
-      y.set(0);
-      setFree(false);
-      persist({ free: false, x: 0, y: 0 });
-      return;
-    }
+  const dock = () => {
+    x.set(0);
+    y.set(0);
+    setFree(false);
+    setWillSnap(false);
+    snapRef.current = false;
+    persist({ free: false, x: 0, y: 0 });
+    // A short acknowledgement, so the panel is seen to arrive rather than to
+    // have always been there. Windows does the same thing when a window snaps,
+    // and for the same reason: the movement was the user's, and the software
+    // should be seen to have caught it.
+    setLanded(true);
+    window.setTimeout(() => setLanded(false), 420);
+  };
+
+  const release = () => {
     setFree(true);
     persist({ free: true });
   };
+
+  /**
+   * Press, drag, tear off, shove back.
+   *
+   * One gesture on the header does all of it. Pressed and let go, it toggles —
+   * the keyboard path, and the one for anybody who would rather press a button
+   * than throw a window about. Pressed and moved, it drags; and if the panel was
+   * still clipped to the edge, that first movement pulls it off, the way a tab
+   * comes out of a browser window. Nothing has to be armed first.
+   */
+  const onGrab = (e: React.PointerEvent) => {
+    // A pull that begins before the last spring has finished should start from
+    // where the panel actually is, not from where it was heading.
+    x.stop();
+    y.stop();
+
+    // The close cross is a button, not a handle.
+    const hit = (e.target as HTMLElement).closest('button');
+    if (hit && !hit.hasAttribute('data-grip')) return;
+
+    const header = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    gesture.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: x.get(),
+      baseY: y.get(),
+      grabX: e.clientX - header.left,
+      grabY: e.clientY - header.top,
+      torn: free,
+      moved: false
+    };
+
+    // On the window, not on the handle, and not on pointer capture either.
+    //
+    // The panel moves out from under the hand almost immediately — that is the
+    // whole gesture — and the moment the cursor is no longer over the header,
+    // an element listener stops hearing anything. The drag then dies four
+    // pixels in, which is exactly what it did. Capture ought to cover that and
+    // did not survive the re-renders the drag itself causes, so the listeners
+    // go somewhere that cannot move: the window.
+    // Added and removed by the same two closures, which delegate through refs.
+    // However many renders happen in between, nothing is left on the window.
+    const move = (ev: PointerEvent) => moveRef.current(ev);
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      upRef.current();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
+  const onDragMove = (e: PointerEvent) => {
+    const g = gesture.current;
+    if (!g) return;
+
+    const dx = e.clientX - g.startX;
+    const dy = e.clientY - g.startY;
+    if (!g.moved && Math.hypot(dx, dy) < SLOP) return;
+    g.moved = true;
+    setDragging(true);
+
+    // Still clipped: the panel resists.
+    //
+    // A window that came away at the first twitch would be a window that is
+    // never really attached, and the snap back to the edge would then have
+    // nothing to mean. So the pull is answered by a fraction of itself, easing
+    // out to a limit, the way anything held by a magnet gives a little before
+    // it lets go — and it only counts leftward, since dragging a docked panel
+    // further into the edge is not a request for anything.
+    if (!g.torn) {
+      const pull = Math.max(-dx, 0);
+      if (pull < 1) {
+        x.set(0);
+        y.set(0);
+        return;
+      }
+      setPeeling(true);
+      const give = GIVE * (1 - Math.exp(-pull / (TEAR * 0.55)));
+      x.set(-give);
+      y.set(dy * 0.1);
+      if (pull < TEAR) return;
+
+      // Past the threshold it comes off. The panel changes size and anchor at
+      // this moment, so rather than let it jump somewhere of its own choosing
+      // it is placed under the hand that pulled it — measured after the layout
+      // has actually changed, because before that the new rectangle does not
+      // exist to measure.
+      g.torn = true;
+      setPeeling(false);
+      setFree(true);
+      const px = e.clientX;
+      const py = e.clientY;
+      requestAnimationFrame(() => {
+        const el = wrapRef.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const nx = x.get() + (px - g.grabX - r.left);
+        const ny = y.get() + (py - g.grabY - r.top);
+        // A hand's width past where it was pulled to, then back: the recoil of
+        // something that was being held and is suddenly not. Set, then eased,
+        // so the drag that follows starts from the settled position and not
+        // from the overshoot.
+        x.set(nx - 14);
+        y.set(ny);
+        animate(x, nx, { type: 'spring', stiffness: 520, damping: 26 });
+        g.baseX = nx;
+        g.baseY = ny;
+        g.startX = px;
+        g.startY = py;
+      });
+      return;
+    }
+
+    x.set(g.baseX + dx);
+    y.set(g.baseY + dy);
+
+    const el = wrapRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const near = r.right > window.innerWidth - SNAP;
+      snapRef.current = near;
+      setWillSnap(near);
+    }
+  };
+
+  const onLetGo = () => {
+    const g = gesture.current;
+    gesture.current = null;
+    setDragging(false);
+    setPeeling(false);
+    if (!g) return;
+
+    // A press that never moved is a press.
+    if (!g.moved) {
+      if (free) dock();
+      else release();
+      return;
+    }
+
+    // Pulled, but not far enough. It goes back to the edge under its own
+    // steam — with enough spring in it to read as having been let go of
+    // rather than as having been put back.
+    if (!g.torn) {
+      setPeeling(false);
+      animate(x, 0, { type: 'spring', stiffness: 420, damping: 24 });
+      animate(y, 0, { type: 'spring', stiffness: 420, damping: 24 });
+      return;
+    }
+
+    if (snapRef.current) {
+      dock();
+      return;
+    }
+    setWillSnap(false);
+    persist({ x: x.get(), y: y.get() });
+  };
+
+  moveRef.current = onDragMove;
+  upRef.current = onLetGo;
 
   return (
     <>
@@ -159,15 +388,29 @@ export function RightAIChat() {
           The wrapper never takes a click of its own: docked and shut it still
           covers a tall strip of the right edge, and an invisible box swallowing
           presses there is a bug nobody would think to look for. */}
+      {/* Where it will land. Windows shows you the shape of the snap before you
+          commit to it, and that preview is most of why snapping feels like a
+          feature rather than an accident — you are choosing it, not discovering
+          it afterwards. */}
+      <AnimatePresence>
+        {dragging && willSnap ? (
+          <motion.div
+            aria-hidden="true"
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 24 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="pointer-events-none fixed bottom-0 right-0 top-0 z-40 w-[min(23rem,92vw)] rounded-l-block border-2 border-r-0 border-dashed border-ink/45 bg-ink/[0.07]"
+          />
+        ) : null}
+      </AnimatePresence>
+
       <motion.div
         ref={wrapRef}
-        drag={free}
-        dragControls={dragControls}
-        dragListener={false}
-        dragMomentum={false}
-        onDragEnd={() => persist({ x: x.get(), y: y.get() })}
         style={{ x, y }}
         className={`pointer-events-none fixed z-50 ${
+          dragging ? '' : 'transition-[top,right,width,height] duration-drape ease-drape'
+        } ${
           free
             ? 'right-4 top-20 h-[min(34rem,72vh)] w-[min(23rem,92vw)]'
             : 'bottom-0 right-0 top-0 w-[min(23rem,92vw)]'
@@ -179,8 +422,10 @@ export function RightAIChat() {
           // Off-screen content stays in the DOM, so without `inert` a keyboard
           // user tabs into a conversation nobody can see.
           inert={!open}
-          className={`flex h-full flex-col border-2 border-rule bg-surface transition-[transform,opacity] duration-drape ease-drape ${
-            free ? 'rounded-block' : 'rounded-l-block border-r-0'
+          className={`flex h-full flex-col border-2 bg-surface transition-[transform,opacity,border-color] duration-drape ease-drape ${
+            landed ? 'border-ink' : 'border-rule'
+          } ${
+            free || peeling ? 'rounded-block' : 'rounded-l-block border-r-0'
           } ${
             open
               ? 'pointer-events-auto translate-x-0 opacity-100'
@@ -192,14 +437,8 @@ export function RightAIChat() {
           <ChatBody
             onClose={() => setOpen(false)}
             free={free}
-            onToggleFree={toggleFree}
-            onGrab={(e) => {
-              if (!free) return;
-              // A press on the catch, or on the close cross, is a press — not
-              // the beginning of a drag.
-              if ((e.target as HTMLElement).closest('button')) return;
-              dragControls.start(e);
-            }}
+            dragging={dragging}
+            onGrab={onGrab}
           />
         </aside>
       </motion.div>
@@ -214,13 +453,13 @@ export function RightAIChat() {
 function ChatBody({
   onClose,
   free,
-  onToggleFree,
+  dragging,
   onGrab
 }: {
   onClose: () => void;
   /** True while the panel is off the edge and can be moved. */
   free: boolean;
-  onToggleFree: () => void;
+  dragging: boolean;
   onGrab: (e: React.PointerEvent) => void;
 }) {
   const t = useTranslations('assistant');
@@ -353,12 +592,12 @@ function ChatBody({
 
   return (
     <>
-      {/* The header is also the handle. Anywhere else and you would be dragging
-          the conversation, which is a thing people select text in. */}
+      {/* The header is the handle. Anywhere else and you would be dragging the
+          conversation, which is a thing people select text in. */}
       <header
         onPointerDown={onGrab}
-        className={`flex items-center gap-3 px-5 py-5 ${
-          free ? 'cursor-grab select-none active:cursor-grabbing' : ''
+        className={`flex touch-none items-center gap-3 px-5 py-5 ${
+          dragging ? 'cursor-grabbing select-none' : 'cursor-grab select-none'
         }`}
       >
         <AssistantAvatar className="h-9 w-9" />
@@ -367,45 +606,28 @@ function ChatBody({
           <p className="ps-label">{free ? t('roleFree') : t('role')}</p>
         </div>
 
-        {/* The catch. Closed, the panel is clipped to the edge; open, it comes
-            off and can be put anywhere. One control for both directions,
-            because it is one fastening — two buttons would be two things to
-            find for what is plainly a single toggle. */}
+        {/* The grip.
+
+            A pin used to live here and it was the wrong idea: a fastener you
+            press is a setting, and this is not a setting, it is a handle. Six
+            dots is what a thing you can pick up looks like everywhere, and the
+            gesture it invites — pull — is the one that now works. Pressed
+            without moving it still toggles, which keeps a keyboard and anyone
+            who would rather not throw windows around on the same path. */}
         <button
           type="button"
-          onClick={onToggleFree}
+          data-grip=""
           aria-label={free ? t('dock') : t('undock')}
           aria-pressed={free}
-          className={`grid h-9 w-9 place-items-center rounded border-2 transition-colors ${
-            free
-              ? 'border-ink bg-sunk text-ink'
-              : 'border-rule text-ink-muted hover:bg-sunk hover:text-ink'
-          }`}
+          className="grid h-9 w-7 shrink-0 cursor-grab place-items-center rounded text-ink-faint transition-colors hover:bg-sunk hover:text-ink active:cursor-grabbing"
         >
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {/* A pin: pressed in while docked, pulled out and tilted once the
-                panel is loose. The same object in two states, so the button
-                shows what it did rather than what it will do next. */}
-            {free ? (
-              <>
-                <path d="M8.5 3.5 15 10l-1.8 1.8a4 4 0 0 0-1 4l-.7.7-6-6 .7-.7a4 4 0 0 0 4-1z" />
-                <path d="m5.5 18.5 3.2-3.2" />
-              </>
-            ) : (
-              <>
-                <path d="M9 3h6l-1 5 3 3H7l3-3z" />
-                <path d="M12 11v10" />
-              </>
-            )}
+          <svg viewBox="0 0 10 16" aria-hidden="true" className="h-4 w-3" fill="currentColor">
+            <circle cx="2.5" cy="3" r="1.4" />
+            <circle cx="7.5" cy="3" r="1.4" />
+            <circle cx="2.5" cy="8" r="1.4" />
+            <circle cx="7.5" cy="8" r="1.4" />
+            <circle cx="2.5" cy="13" r="1.4" />
+            <circle cx="7.5" cy="13" r="1.4" />
           </svg>
         </button>
 
