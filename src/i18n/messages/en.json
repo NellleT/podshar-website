@@ -120,7 +120,10 @@
     "offline": "connection dropped. not my fault, blame the wires",
     "avatarAlt": "Podshar AI assistant",
     "collapse": "Collapse assistant",
-    "expand": "Expand assistant"
+    "expand": "Expand assistant",
+    "undock": "unclip the panel",
+    "dock": "clip it back",
+    "roleFree": "loose, drag by the header"
   },
   "guide": {
     "lost": "no idea what that was. name a section, or ask about what you see",

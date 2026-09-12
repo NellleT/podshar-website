@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { motion, useDragControls, useMotionValue } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/routing';
 import { placeForPath } from '@/lib/navigation';
@@ -11,6 +12,11 @@ type Message = { id: string; role: 'assistant' | 'user'; text: string };
 
 /** How tall the message field may grow before it starts scrolling, in pixels. */
 const MAX_FIELD = 120;
+
+/** Where the panel sits and whether it has been unclipped, per browser. */
+const STORE_KEY = 'podshar:chat';
+/** How much of the panel must stay on screen after a resize, in pixels. */
+const EDGE_KEEP = 56;
 
 /**
  * Podshar, the resident assistant.
@@ -35,6 +41,85 @@ export function RightAIChat() {
   const t = useTranslations('assistant');
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  /**
+   * Clipped to the edge, or off the leash.
+   *
+   * Docked, the panel is what it has always been: full height against the right
+   * edge, sliding in and out. Released, it becomes a window you can put where
+   * you like — because the thing you want to ask the dog about is often exactly
+   * what the panel is covering, and a conversation held beside the page should
+   * not be the reason you cannot see the page.
+   *
+   * It clips back by pressing the same catch, and lands where it started rather
+   * than wherever it was dropped: docking is a place, not a direction.
+   */
+  const [free, setFree] = useState(false);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  // Dragging is started by hand from the header, not by framer-motion's own
+  // listener on the whole panel. Otherwise a swipe meant to scroll the
+  // conversation picks the window up instead, and selecting a line of the dog's
+  // reply drags the room it is written in.
+  const dragControls = useDragControls();
+
+  // Read after mount, never during render: the server has no idea where this
+  // browser last left the panel, and disagreeing about it is a hydration error
+  // on every load.
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      const v = JSON.parse(raw) as { free?: boolean; x?: number; y?: number };
+      if (typeof v.x === 'number') x.set(v.x);
+      if (typeof v.y === 'number') y.set(v.y);
+      setFree(Boolean(v.free));
+    } catch {
+      // Blocked storage, or something else under our key. The default corner is
+      // a perfectly good place to be.
+    }
+  }, [x, y]);
+
+  const persist = (next: { free?: boolean; x?: number; y?: number }) => {
+    try {
+      window.localStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({ free, x: x.get(), y: y.get(), ...next })
+      );
+    } catch {
+      // It still works for this session.
+    }
+  };
+
+  // A window made smaller can leave a released panel off the screen, where
+  // there is nothing left to grab to bring it back. Measured rather than
+  // computed: the panel's own rectangle already accounts for its size, its
+  // anchor and however far it has been dragged.
+  useEffect(() => {
+    if (!free) return;
+    const clamp = () => {
+      const el = wrapRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      let dx = 0;
+      let dy = 0;
+      if (r.right < EDGE_KEEP) dx = EDGE_KEEP - r.right;
+      else if (r.left > window.innerWidth - EDGE_KEEP) {
+        dx = window.innerWidth - EDGE_KEEP - r.left;
+      }
+      if (r.top < 0) dy = -r.top;
+      else if (r.top > window.innerHeight - EDGE_KEEP) {
+        dy = window.innerHeight - EDGE_KEEP - r.top;
+      }
+      if (dx) x.set(x.get() + dx);
+      if (dy) y.set(y.get() + dy);
+    };
+    clamp();
+    window.addEventListener('resize', clamp);
+    return () => window.removeEventListener('resize', clamp);
+  }, [free, x, y]);
 
   useEffect(() => {
     if (!open) return;
@@ -50,20 +135,74 @@ export function RightAIChat() {
     if (open) panelRef.current?.querySelector('textarea')?.focus();
   }, [open]);
 
+  const toggleFree = () => {
+    if (free) {
+      // Home, not wherever it happened to be left.
+      x.set(0);
+      y.set(0);
+      setFree(false);
+      persist({ free: false, x: 0, y: 0 });
+      return;
+    }
+    setFree(true);
+    persist({ free: true });
+  };
+
   return (
     <>
-      <aside
-        ref={panelRef}
-        aria-label={t('name')}
-        // Off-screen content stays in the DOM, so without `inert` a keyboard
-        // user tabs into a conversation nobody can see.
-        inert={!open}
-        className={`fixed bottom-0 right-0 top-0 z-50 flex w-[min(23rem,92vw)] flex-col rounded-l-block border-2 border-r-0 border-rule bg-surface transition-transform duration-drape ease-drape ${
-          open ? 'translate-x-0' : 'translate-x-full'
+      {/* Two elements, one panel. The outer carries the drag offset, which
+          framer-motion writes as a transform; the inner carries the open and
+          shut transition, which is also a transform. On one element the second
+          would overwrite the first, and the panel would either refuse to move
+          or refuse to close.
+
+          The wrapper never takes a click of its own: docked and shut it still
+          covers a tall strip of the right edge, and an invisible box swallowing
+          presses there is a bug nobody would think to look for. */}
+      <motion.div
+        ref={wrapRef}
+        drag={free}
+        dragControls={dragControls}
+        dragListener={false}
+        dragMomentum={false}
+        onDragEnd={() => persist({ x: x.get(), y: y.get() })}
+        style={{ x, y }}
+        className={`pointer-events-none fixed z-50 ${
+          free
+            ? 'right-4 top-20 h-[min(34rem,72vh)] w-[min(23rem,92vw)]'
+            : 'bottom-0 right-0 top-0 w-[min(23rem,92vw)]'
         }`}
       >
-        <ChatBody onClose={() => setOpen(false)} />
-      </aside>
+        <aside
+          ref={panelRef}
+          aria-label={t('name')}
+          // Off-screen content stays in the DOM, so without `inert` a keyboard
+          // user tabs into a conversation nobody can see.
+          inert={!open}
+          className={`flex h-full flex-col border-2 border-rule bg-surface transition-[transform,opacity] duration-drape ease-drape ${
+            free ? 'rounded-block' : 'rounded-l-block border-r-0'
+          } ${
+            open
+              ? 'pointer-events-auto translate-x-0 opacity-100'
+              : free
+                ? 'pointer-events-none scale-[0.98] opacity-0'
+                : 'pointer-events-none translate-x-full'
+          }`}
+        >
+          <ChatBody
+            onClose={() => setOpen(false)}
+            free={free}
+            onToggleFree={toggleFree}
+            onGrab={(e) => {
+              if (!free) return;
+              // A press on the catch, or on the close cross, is a press — not
+              // the beginning of a drag.
+              if ((e.target as HTMLElement).closest('button')) return;
+              dragControls.start(e);
+            }}
+          />
+        </aside>
+      </motion.div>
 
       {/* The launcher owns its own position, collapse state and drag. This
           component only says whether the panel is up. */}
@@ -72,7 +211,18 @@ export function RightAIChat() {
   );
 }
 
-function ChatBody({ onClose }: { onClose: () => void }) {
+function ChatBody({
+  onClose,
+  free,
+  onToggleFree,
+  onGrab
+}: {
+  onClose: () => void;
+  /** True while the panel is off the edge and can be moved. */
+  free: boolean;
+  onToggleFree: () => void;
+  onGrab: (e: React.PointerEvent) => void;
+}) {
   const t = useTranslations('assistant');
   const tGuide = useTranslations('guide');
   const locale = useLocale();
@@ -203,12 +353,62 @@ function ChatBody({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <header className="flex items-center gap-3 px-5 py-5">
+      {/* The header is also the handle. Anywhere else and you would be dragging
+          the conversation, which is a thing people select text in. */}
+      <header
+        onPointerDown={onGrab}
+        className={`flex items-center gap-3 px-5 py-5 ${
+          free ? 'cursor-grab select-none active:cursor-grabbing' : ''
+        }`}
+      >
         <AssistantAvatar className="h-9 w-9" />
         <div className="min-w-0 flex-1">
           <p className="text-base font-semibold text-ink">{t('name')}</p>
-          <p className="ps-label">{t('role')}</p>
+          <p className="ps-label">{free ? t('roleFree') : t('role')}</p>
         </div>
+
+        {/* The catch. Closed, the panel is clipped to the edge; open, it comes
+            off and can be put anywhere. One control for both directions,
+            because it is one fastening — two buttons would be two things to
+            find for what is plainly a single toggle. */}
+        <button
+          type="button"
+          onClick={onToggleFree}
+          aria-label={free ? t('dock') : t('undock')}
+          aria-pressed={free}
+          className={`grid h-9 w-9 place-items-center rounded border-2 transition-colors ${
+            free
+              ? 'border-ink bg-sunk text-ink'
+              : 'border-rule text-ink-muted hover:bg-sunk hover:text-ink'
+          }`}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {/* A pin: pressed in while docked, pulled out and tilted once the
+                panel is loose. The same object in two states, so the button
+                shows what it did rather than what it will do next. */}
+            {free ? (
+              <>
+                <path d="M8.5 3.5 15 10l-1.8 1.8a4 4 0 0 0-1 4l-.7.7-6-6 .7-.7a4 4 0 0 0 4-1z" />
+                <path d="m5.5 18.5 3.2-3.2" />
+              </>
+            ) : (
+              <>
+                <path d="M9 3h6l-1 5 3 3H7l3-3z" />
+                <path d="M12 11v10" />
+              </>
+            )}
+          </svg>
+        </button>
+
         <button
           type="button"
           onClick={onClose}

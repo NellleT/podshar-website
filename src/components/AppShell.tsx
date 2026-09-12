@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 import { LeftSidebar } from './LeftSidebar';
@@ -202,12 +203,17 @@ export function AppShell({
 
         {/* A footer, and nothing in it yet.
 
-            Deliberately a placeholder rather than an empty strip: dashed, faint
-            and saying so, the same way the five reserved rows in the drawer do.
-            An empty bar at the bottom of every page reads as a bug; a bar that
-            admits it is unfinished reads as a plan. What goes here has not been
-            decided, and inventing something to fill it would be deciding. */}
-        <footer className="mx-3 mb-3 mt-2 rounded-block border-2 border-dashed border-rule-soft px-4 py-7 text-center sm:mx-4 sm:mb-4">
+            Deliberately a placeholder rather than an empty strip: dashed and
+            saying so, the way the five reserved rows in the drawer do. An empty
+            bar at the bottom of every page reads as a bug; a bar that admits it
+            is unfinished reads as a plan.
+
+            Edge to edge with a rule on top, not an inset card — a footer is a
+            band the page ends with, and the first attempt, floating in its own
+            rounded box with margins, read as one more bento block that happened
+            to be empty. The dashes are the only thing saying "not yet"; the
+            shape says "footer". */}
+        <footer className="mt-2 border-t-2 border-dashed border-rule px-4 py-10 text-center">
           <p className="ps-label text-ink-faint">{tNav('wip')}</p>
         </footer>
       </div>
@@ -216,16 +222,22 @@ export function AppShell({
 
       {/* Last, and over everything: the dog is fixed at z-50 and a panel that
           slid under him would be a panel you cannot fully read. */}
-      {patchesOpen && patches ? (
-        <Modal
-          title={tPatches('title')}
-          hint={tPatches('hint')}
-          close={t('close')}
-          onClose={() => setPatchesOpen(false)}
-        >
-          {patches}
-        </Modal>
-      ) : null}
+      {/* `AnimatePresence` is what lets the panel finish leaving. Without it
+          React unmounts the moment the flag flips and the panel vanishes
+          mid-blink, which is abrupt enough to register as a glitch. */}
+      <AnimatePresence>
+        {patchesOpen && patches ? (
+          <Modal
+            key="patches"
+            title={tPatches('title')}
+            hint={tPatches('hint')}
+            close={t('close')}
+            onClose={() => setPatchesOpen(false)}
+          >
+            {patches}
+          </Modal>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

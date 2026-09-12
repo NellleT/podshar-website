@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 /**
  * A page shown over the page you were already on.
@@ -34,6 +35,14 @@ export function Modal({
   onClose: () => void;
 }) {
   const panel = useRef<HTMLDivElement | null>(null);
+  const reduceMotion = useReducedMotion();
+
+  // Leaving is faster than arriving, and shallower. A panel that dissolves as
+  // slowly as it appeared feels reluctant to go — you have already decided, and
+  // the animation is now in the way. Reduced motion gets the fade alone: the
+  // change of state still reads, nothing travels.
+  const enter = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.97 };
+  const leave = reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.985 };
 
   // The callback lives in a ref so the effect below can run exactly once.
   // Depending on `onClose` directly would re-run it on every render of the
@@ -73,24 +82,32 @@ export function Modal({
       {/* The page behind, blurred and dimmed. A button rather than a div, so
           clicking away is reachable by keyboard and announced as what it does
           instead of being a silent trap for anyone not using a mouse. */}
-      <button
+      <motion.button
         type="button"
         aria-label={close}
         onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="fixed inset-0 cursor-default bg-ink/25 backdrop-blur-[3px]"
       />
 
-      <div
+      <motion.div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
+        initial={enter}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={leave}
+        transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
         // Rounder than a bento card on purpose: a panel floating over a blurred
         // page is not one of the blocks in the grid, and the softer corner is what
         // says so. No shadow — nothing on this site casts one, and the dimmed,
         // blurred page behind already lifts the panel off it.
-        className="animate-rise-in scroll-quiet relative max-h-full w-full max-w-3xl overflow-y-auto overscroll-contain rounded-[20px] border-2 border-rule bg-surface outline-none"
+        className="scroll-quiet relative max-h-full w-full max-w-3xl overflow-y-auto overscroll-contain rounded-[20px] border-2 border-rule bg-surface outline-none"
       >
         {/* The title travels with the close button rather than scrolling away
             under it. A sticky strip carrying only the cross left the heading to
@@ -113,7 +130,7 @@ export function Modal({
         </header>
 
         <div className="px-6 pb-8 pt-2 sm:px-10">{children}</div>
-      </div>
+      </motion.div>
     </div>
   );
 }

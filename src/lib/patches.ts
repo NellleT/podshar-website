@@ -56,6 +56,12 @@ export type Patch = {
 
 const ENTRIES: Patch[] = [
   {
+    version: '0.24',
+    date: '2026-09-12',
+    author: 'trqwaa',
+    note: 'окно мопса отстёгивается от края и таскается по экрану за шапку'
+  },
+  {
     version: '0.23',
     date: '2026-09-12',
     author: 'trqwaa',
